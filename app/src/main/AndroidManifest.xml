@@ -23,6 +23,26 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <activity
+            android:name=".activities.AddActivity"
+            android:exported="false"
+            android:theme="@style/Theme.FoodManager"/>
+
+        <activity
+            android:name=".activities.HomeActivity"
+            android:exported="false"
+            android:theme="@style/Theme.FoodManager"/>
+
+        <activity
+            android:name=".activities.SummaryActivity"
+            android:exported="false"
+            android:theme="@style/Theme.FoodManager"/>
+
+        <activity
+            android:name=".activities.MoreDetailActivity"
+            android:exported="false"
+            android:theme="@style/Theme.FoodManager"/>
     </application>
 
 </manifest>

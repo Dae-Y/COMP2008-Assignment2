@@ -1,5 +1,6 @@
-package com.example.foodmanager
+package com.example.foodmanager.activities
 
+import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -11,6 +12,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material.MaterialTheme
+import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -18,9 +20,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
+import com.example.foodmanager.MainActivity
+import com.example.foodmanager.NavBar
 import com.example.foodmanager.ui.theme.FoodManagerTheme
 
-class MainActivity : ComponentActivity() {
+class SummaryActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -31,16 +35,17 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     verticalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Box(modifier = Modifier
-                        .fillMaxWidth()
-                        .weight(1f))
-                    {
-                        MainActivityTest()
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1f)
+                    ) {
+                        SummaryActivityTest()
                     }
-
-                    Box(modifier = Modifier
-                        .fillMaxWidth())
-                    {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                    ) {
                         NavBar(context)
                     }
                 }
@@ -48,25 +53,29 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    // Make it so when user press back will go to home by default
+    // Instead of going to the previous Activity
     override fun onBackPressed() {
         super.onBackPressed()
-        // Exit the app
-        finishAffinity()
+        // Navigate back to MainActivity
+        val intent = Intent(this, MainActivity::class.java)
+        intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK
+        startActivity(intent)
+        finish()
     }
 }
 
-
 @Composable
-fun MainActivityTest() {
+fun SummaryActivityTest() {
     // TODO: Change later, this is just a test
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.Magenta),
+            .background(Color.Cyan),
         contentAlignment = Alignment.Center
     ) {
-        androidx.compose.material.Text(
-            text = "HOME",
+        Text(
+            text = "Summary",
             fontSize = MaterialTheme.typography.h3.fontSize,
             fontWeight = FontWeight.Bold,
             color = Color.White
@@ -76,6 +85,6 @@ fun MainActivityTest() {
 
 @Composable
 @Preview
-fun HomeScreenPreview() {
-    MainActivityTest()
+fun SummaryActivityPreview() {
+    SummaryActivityTest()
 }
