@@ -22,7 +22,8 @@ data class Food(
     @ColumnInfo(name = "portion_size") val portion: Int,
     @ColumnInfo(name = "meal_type") val mealType: String,
     @ColumnInfo(name = "kcal") val kcal: Int,
-    @ColumnInfo(name = "date") val date: String // Use "yyyy-MM-dd" format for consistency
+    @ColumnInfo(name = "date") val date: String, // Use "yyyy-MM-dd" format for consistency
+    @ColumnInfo(name = "food_image") val image: String? // Store the path of the image
 )
 
 // Data Access Object, DAO is an interface that defines methods for accessing the database.
