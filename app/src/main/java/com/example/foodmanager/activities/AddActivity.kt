@@ -259,6 +259,8 @@ fun AddActivityContent(foodDao: FoodDao) {
                     if(!hasEmpty) {
                         foodDao.insertFood(
                             Food(
+                                // TODO: img take not yet implimennted
+                                image = R.drawable.defaultfoodimg.toString(),
                                 name = foodName,
                                 portion = portionSize.toInt(),
                                 mealType = mealT,
