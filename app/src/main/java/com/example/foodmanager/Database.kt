@@ -41,6 +41,9 @@ interface FoodDao {
     @Query("SELECT * FROM foods WHERE date BETWEEN :startDate AND :endDate") // Get foods by date range
     fun getFoodsByDateRange(startDate: String, endDate: String): List<Food>
 
+    @Query("SELECT SUM(kcal) FROM foods WHERE date = :currDate") // Getting total Kcal in a (Specific)day
+    fun getDayTotalKcal(currDate: String): Int
+
     @Query("SELECT COUNT(*) FROM foods") // Count total foods
     fun countTotalFoods(): Int
 
@@ -49,6 +52,7 @@ interface FoodDao {
 
     @Query("SELECT * FROM foods ORDER BY date DESC") // Get foods ordered by date
     fun getFoodsOrderedByDate(): List<Food>
+
     @Insert
     fun insertFood(food: Food)
 
