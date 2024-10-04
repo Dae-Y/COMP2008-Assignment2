@@ -33,7 +33,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
@@ -259,7 +258,7 @@ fun AddActivityContent(foodDao: FoodDao) {
                     if(!hasEmpty) {
                         foodDao.insertFood(
                             Food(
-                                // TODO: img take not yet implimennted
+                                // TODO: img take not yet implemented
                                 image = R.drawable.defaultfoodimg.toString(),
                                 name = foodName,
                                 portion = portionSize.toInt(),
@@ -285,24 +284,28 @@ data class ChoicesDataModel(val name: String)
 fun MealTypeDropdown(
     options: List<ChoicesDataModel>,
     onSelect: (option: String) -> Unit,
-    modifier: Modifier = Modifier)
-{
+    modifier: Modifier = Modifier
+) {
     var expanded by remember { mutableStateOf(false) }
     var selectedMealType by remember { mutableStateOf(options[0]) }
 
     ExposedDropdownMenuBox(
-        expanded = expanded, onExpandedChange = { expanded = it },
-        modifier = Modifier.then(modifier)
+        expanded = expanded,
+        onExpandedChange = { expanded = it },
+        modifier = modifier
     ) {
         OutlinedTextField(
-            modifier = Modifier.menuAnchor(MenuAnchorType.PrimaryNotEditable).fillMaxWidth(),
             readOnly = true,
             singleLine = true,
             value = selectedMealType.name,
-            onValueChange = { },
+            onValueChange = { /* No-op */ },
             label = { Text("Meal Type") },
-            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) }
+            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+            modifier = Modifier
+                .fillMaxWidth()
+                .menuAnchor() // Use menuAnchor to make the field clickable
         )
+
         ExposedDropdownMenu(
             expanded = expanded,
             onDismissRequest = { expanded = false }
@@ -310,9 +313,7 @@ fun MealTypeDropdown(
             options.forEach { option ->
                 DropdownMenuItem(
                     text = {
-                        Row {
-                            Text(option.name)
-                        }
+                        Text(option.name)
                     },
                     onClick = {
                         selectedMealType = option
@@ -325,5 +326,4 @@ fun MealTypeDropdown(
         }
     }
 }
-
 
