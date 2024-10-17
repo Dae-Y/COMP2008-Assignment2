@@ -247,21 +247,6 @@ fun FoodCard(food: Food, foodDao: FoodDao) {
                     .clip(CircleShape)
                     .align(Alignment.CenterVertically)
             )
-//            coil.compose.AsyncImage
-
-//            Image(
-//                painter = rememberAsyncImagePainter(
-//                        model = "https://firebasestorage.googleapis.com/v0/b/foodmanager-ff0cd.appspot.com/o/12917568%2F1?alt=media&token=48503205-f775-4827-a242-86c509649139",
-//                        placeholder = painterResource(R.drawable.defaultfoodimg),
-////                        error = painterResource(R.drawable.defaultfoodimg),
-//                        contentScale = ContentScale.Fit
-//                    ),
-//                contentDescription = "Contact Picture",
-//                modifier = Modifier
-//                    .size(100.dp)
-//                    .clip(CircleShape)
-//                    .align(Alignment.CenterVertically)
-//            )
             Spacer(modifier = Modifier.width(8.dp)) // Changed to width for horizontal spacing
             Column(
                 modifier = Modifier.align(Alignment.CenterVertically)
@@ -346,32 +331,23 @@ fun UpdateDailyKcalDialog(
 
 fun initialLaunchCheck(foodDao: FoodDao)
 {
-
-    val database = Firebase.database
-    val myRef = database.getReference("deviceID")
-
-    val foodId = 2293 // Replace with the actual food ID
-    val foodImage = "path/to/image.jpg" // Replace with the actual image path
-
-    val foodData = mapOf("id" to foodId, "food_image" to foodImage)
-    myRef.child(foodId.toString()).setValue(foodData)
-
-    val storage = Firebase.storage
-    val storageRef = storage.reference
-    val foodImagesRef = storageRef.child("deviceID") // Create a reference to the "foods" folder
-
-//    val imageFile = R.drawable.defaultfoodimg
-
-    val imageRef = foodImagesRef.child("$foodId.jpg") // Create a reference for the image
-//    val uploadTask = imageRef.putFile(imageFile)
-
     if(!foodDao.hasProfile())
     {
-        // TODO: Firebase implementation check connection & check if id exists then random
-        val id = Random.nextInt()
+        val database = Firebase.database
+        var id = Random.nextInt()
+
         foodDao.newUserProfile(UserProfile(
             deviceID = id,
             kcalDailyLimit = 0
         ))
+
+        val myRef = database.getReference(id.toString())
+
+        val foodID = 1
+        val foodImage = "temp"
+        val foodData = mapOf("id" to foodID, "food_image" to foodImage)
+        // get specific id by calling the id if not null run rand again
+        // Add the foodID and pictureID
+        myRef.child(foodID.toString()).setValue(foodData)
     }
 }

@@ -36,6 +36,7 @@ import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
@@ -123,7 +124,6 @@ fun AddActivityContent(foodDao: FoodDao) {
     // Required remember
     var isNameEmpty by remember { mutableStateOf(false) }
     var isPortionEmpty by remember { mutableStateOf(false) }
-    var isMealTypeEmpty by remember { mutableStateOf(false) }
     var isKcalEmpty by remember { mutableStateOf(false) }
 
     // Getting DateTime [dd:mm:yyyy]
@@ -155,14 +155,6 @@ fun AddActivityContent(foodDao: FoodDao) {
                     modifier = Modifier.fillMaxWidth(),
                     contentAlignment = Alignment.Center
             ){
-//                Image(
-//                    painter = painterResource(R.drawable.defaultfoodimg),
-//                    contentDescription = "Food Image",
-//                    modifier = Modifier
-//                        .size(150.dp)
-//                        .background(Color.LightGray, shape = RoundedCornerShape(50.dp))
-//                        .padding(8.dp)
-//                )
                 foodImage = ThumbnailCaptureScreen()
             }
             }
@@ -173,7 +165,8 @@ fun AddActivityContent(foodDao: FoodDao) {
                                     isNameEmpty = false},
                     label = { Text("Food Name") },
                     modifier = Modifier.fillMaxWidth(),
-                    textStyle = TextStyle(Color.Black)
+                    textStyle = TextStyle(Color.Black),
+                    colors = myOutlinedTextFieldColors()
                 )
                 if (isNameEmpty) {
                     Text(
@@ -199,7 +192,8 @@ fun AddActivityContent(foodDao: FoodDao) {
                     keyboardOptions =
                     KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number),
                     modifier = Modifier.fillMaxWidth(),
-                    textStyle = TextStyle(Color.Black)
+                    textStyle = TextStyle(Color.Black),
+                    colors = myOutlinedTextFieldColors()
                 )
                 if(isPortionEmpty) {
                     Text(
@@ -217,15 +211,7 @@ fun AddActivityContent(foodDao: FoodDao) {
                         mealT = newValue
                     },
                     modifier = Modifier.padding(10.dp))
-                if(mealT.isNotEmpty()) isMealTypeEmpty = false
-                if(isMealTypeEmpty) {
-                    Text(
-                        text = "*required",
-                        color = Color.Red,
-                        style = MaterialTheme.typography.bodyMedium,
-                        modifier = Modifier.padding(start = 16.dp)
-                    )
-                }}
+                }
             item { Spacer(modifier = Modifier.height(16.dp)) }
             item { OutlinedTextField(
                     value = foodKcal,
@@ -241,7 +227,8 @@ fun AddActivityContent(foodDao: FoodDao) {
                     label = { Text("Food Kcal") },
                     keyboardOptions =
                     KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number),
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = myOutlinedTextFieldColors()
                 )
                 if(isKcalEmpty) {
                     Text(
@@ -261,10 +248,6 @@ fun AddActivityContent(foodDao: FoodDao) {
                     }
                     if (portionSize.isEmpty()) {
                         isPortionEmpty = true
-                        hasEmpty = true
-                    }
-                    if (mealT.isEmpty()) {
-                        isMealTypeEmpty = true
                         hasEmpty = true
                     }
                     if (foodKcal.isEmpty()) {
@@ -324,7 +307,8 @@ fun MealTypeDropdown(
             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
             modifier = Modifier
                 .fillMaxWidth()
-                .menuAnchor() // Use menuAnchor to make the field clickable
+                .menuAnchor(),
+            colors = myOutlinedTextFieldColors() // Use menuAnchor to make the field clickable
         )
 
         ExposedDropdownMenu(
@@ -347,6 +331,17 @@ fun MealTypeDropdown(
         }
     }
 }
+@Composable
+fun myOutlinedTextFieldColors() = OutlinedTextFieldDefaults.colors(
+    focusedContainerColor = Color.Transparent,
+    focusedTextColor = Color.Black,
+    focusedBorderColor = Color.Black,
+    focusedLabelColor = Color.Black,
+    unfocusedContainerColor = Color.Transparent,
+    unfocusedTextColor = Color.Black,
+    unfocusedBorderColor = Color.Black,
+    unfocusedLabelColor = Color.Black
+)
 
 private fun saveFood(foodID: Int, foodImage: Bitmap?, deviceID: Int) {
     val storageRef = FirebaseStorage.getInstance().getReference(deviceID.toString())
