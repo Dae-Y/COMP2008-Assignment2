@@ -63,6 +63,8 @@ dependencies {
     implementation(libs.androidx.material3)
     implementation(libs.androidx.room.common)
     implementation(libs.firebase.database)
+    implementation(libs.firebase.storage.ktx)
+    implementation(libs.firebase.storage)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -77,6 +79,7 @@ dependencies {
     implementation (libs.androidx.ui)
     implementation (libs.androidx.foundation)
     implementation(libs.androidx.material3.v130)
+    implementation(libs.coil.kt.coil.compose)
 
 
     // ROOM Implementation

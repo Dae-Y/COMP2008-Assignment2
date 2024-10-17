@@ -7,7 +7,6 @@ import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.annotation.RequiresApi
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -48,6 +47,7 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shadow
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
@@ -55,9 +55,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
+import coil.compose.AsyncImage
 import com.example.foodmanager.ui.theme.FoodManagerTheme
 import com.google.firebase.Firebase
 import com.google.firebase.database.database
+import com.google.firebase.storage.storage
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import kotlin.random.Random
@@ -171,7 +173,7 @@ fun MainActivityHome(foodDao: FoodDao, context: Context) {
                         .clickable {
                             clickedStudent = foodItem.id
                         }){
-                        FoodCard(foodItem)
+                        FoodCard(foodItem, foodDao)
                 }}
         }}
     }
@@ -203,9 +205,24 @@ fun CurvedTextWithElevation(text: String, onClick: () -> Unit) {
 }
 
 @Composable
-fun FoodCard(food: Food) {
+fun FoodCard(food: Food, foodDao: FoodDao) {
 //    val bitmap = stringToBitmap(contact.picture)
-    val defaultImage = painterResource(id = R.drawable.defaultfoodimg)
+    val userProfileID = foodDao.getUserProfile().deviceID.toString()
+    val foodID = food.id.toString()
+
+    val foodRef = Firebase.database.getReference(userProfileID).child(foodID)
+
+    var image by remember { mutableStateOf("") }
+
+
+    foodRef.get().addOnSuccessListener { snapshot ->
+        if (snapshot.exists()) {
+            val foodData = snapshot.value as Map<String, Any>
+            image = foodData["food_image"] as String
+        }
+    }
+
+
 
     Card(
         modifier = Modifier
@@ -217,15 +234,34 @@ fun FoodCard(food: Food) {
             modifier = Modifier.padding(16.dp)
                 .fillMaxWidth()
         ) {
-            // painter = if(bitmap != null) BitmapPainter(bitmap.asImageBitmap()) else defaultImage
-            Image(
-                painter = defaultImage,
+
+
+            AsyncImage(
+                model = image,
+                placeholder = painterResource(R.drawable.defaultfoodimg),
+                error = painterResource(R.drawable.defaultfoodimg),
+                contentScale = ContentScale.Fit,
                 contentDescription = "Contact Picture",
                 modifier = Modifier
                     .size(100.dp)
                     .clip(CircleShape)
                     .align(Alignment.CenterVertically)
             )
+//            coil.compose.AsyncImage
+
+//            Image(
+//                painter = rememberAsyncImagePainter(
+//                        model = "https://firebasestorage.googleapis.com/v0/b/foodmanager-ff0cd.appspot.com/o/12917568%2F1?alt=media&token=48503205-f775-4827-a242-86c509649139",
+//                        placeholder = painterResource(R.drawable.defaultfoodimg),
+////                        error = painterResource(R.drawable.defaultfoodimg),
+//                        contentScale = ContentScale.Fit
+//                    ),
+//                contentDescription = "Contact Picture",
+//                modifier = Modifier
+//                    .size(100.dp)
+//                    .clip(CircleShape)
+//                    .align(Alignment.CenterVertically)
+//            )
             Spacer(modifier = Modifier.width(8.dp)) // Changed to width for horizontal spacing
             Column(
                 modifier = Modifier.align(Alignment.CenterVertically)
@@ -310,10 +346,25 @@ fun UpdateDailyKcalDialog(
 
 fun initialLaunchCheck(foodDao: FoodDao)
 {
-    val database = Firebase.database
-    val myRef = database.getReference("message")
 
-    myRef.setValue("Hello, World!")
+    val database = Firebase.database
+    val myRef = database.getReference("deviceID")
+
+    val foodId = 2293 // Replace with the actual food ID
+    val foodImage = "path/to/image.jpg" // Replace with the actual image path
+
+    val foodData = mapOf("id" to foodId, "food_image" to foodImage)
+    myRef.child(foodId.toString()).setValue(foodData)
+
+    val storage = Firebase.storage
+    val storageRef = storage.reference
+    val foodImagesRef = storageRef.child("deviceID") // Create a reference to the "foods" folder
+
+//    val imageFile = R.drawable.defaultfoodimg
+
+    val imageRef = foodImagesRef.child("$foodId.jpg") // Create a reference for the image
+//    val uploadTask = imageRef.putFile(imageFile)
+
     if(!foodDao.hasProfile())
     {
         // TODO: Firebase implementation check connection & check if id exists then random

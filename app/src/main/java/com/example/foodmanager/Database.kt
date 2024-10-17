@@ -75,6 +75,9 @@ interface FoodDao {
     @Query("SELECT * FROM foods ORDER BY date DESC") // Get foods ordered by date
     fun getFoodsOrderedByDate(): List<Food>
 
+    @Query("SELECT id FROM foods ORDER BY id DESC LIMIT 1") // Getting latest food ID
+    fun getLatestFoodId(): Int
+
     @Insert
     fun insertFood(food: Food)
 

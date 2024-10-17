@@ -1,6 +1,8 @@
 package com.example.foodmanager.activities
 
 import android.content.Intent
+import android.graphics.Bitmap
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
@@ -59,6 +61,14 @@ import com.example.foodmanager.MainActivity
 import com.example.foodmanager.NavBar
 import com.example.foodmanager.R
 import com.example.foodmanager.ui.theme.FoodManagerTheme
+import com.google.firebase.Firebase
+import com.google.firebase.database.DatabaseReference
+import com.google.firebase.database.database
+import com.google.firebase.storage.FirebaseStorage
+import com.google.firebase.storage.StorageReference
+import com.google.firebase.storage.storage
+import java.io.File
+import java.io.FileOutputStream
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
@@ -105,10 +115,10 @@ fun AddActivityContent(foodDao: FoodDao) {
     val context = LocalContext.current
 
     // TODO TEMP DATA
-    var foodImage by remember { mutableStateOf("") }
+    var foodImage by remember { mutableStateOf<Bitmap?>(null) }
     var foodName by remember { mutableStateOf("") }
     var portionSize by remember { mutableStateOf("") }
-    var mealT by remember { mutableStateOf("") }
+    var mealT by remember { mutableStateOf("Breakfast") }
     var foodKcal by remember { mutableStateOf("") }
     // Required remember
     var isNameEmpty by remember { mutableStateOf(false) }
@@ -139,19 +149,22 @@ fun AddActivityContent(foodDao: FoodDao) {
                 .padding(16.dp),
             horizontalAlignment = Alignment.Start
         ) {
+
             // TODO: Temp Img placement
             item { Box(
                     modifier = Modifier.fillMaxWidth(),
                     contentAlignment = Alignment.Center
             ){
-                Image(
-                    painter = painterResource(R.drawable.defaultfoodimg),
-                    contentDescription = "Food Image",
-                    modifier = Modifier
-                        .size(150.dp)
-                        .background(Color.LightGray, shape = RoundedCornerShape(50.dp))
-                        .padding(8.dp)
-                )}
+//                Image(
+//                    painter = painterResource(R.drawable.defaultfoodimg),
+//                    contentDescription = "Food Image",
+//                    modifier = Modifier
+//                        .size(150.dp)
+//                        .background(Color.LightGray, shape = RoundedCornerShape(50.dp))
+//                        .padding(8.dp)
+//                )
+                foodImage = ThumbnailCaptureScreen()
+            }
             }
             item { Spacer(modifier = Modifier.height(16.dp)) }
             item { OutlinedTextField(
@@ -270,6 +283,11 @@ fun AddActivityContent(foodDao: FoodDao) {
                                 date = formattedDateTime
                             )
                         )
+
+                        if(foodImage!=null){
+                            saveFood(foodDao.getLatestFoodId(), foodImage, foodDao.getUserProfile().deviceID)
+                        }
+
                         Toast.makeText(context, "Food added!", Toast.LENGTH_SHORT).show()
                         val intent = Intent(context, MainActivity::class.java)
                         context.startActivity(intent)
@@ -330,3 +348,29 @@ fun MealTypeDropdown(
     }
 }
 
+private fun saveFood(foodID: Int, foodImage: Bitmap?, deviceID: Int) {
+    val storageRef = FirebaseStorage.getInstance().getReference(deviceID.toString())
+
+    val myRef = Firebase.database.getReference(deviceID.toString())
+
+    foodImage?.let { bitmap ->
+        val imageFile = File.createTempFile(foodImage.toString(), ".jpg") // Create a temporary file
+        val outputStream = FileOutputStream(imageFile)
+        bitmap.compress(Bitmap.CompressFormat.JPEG, 100, outputStream) // Save the Bitmap to the file
+        outputStream.close()
+
+        val imageUri = Uri.fromFile(imageFile) // Get the Uri of the file
+
+        storageRef.child(foodID.toString()).putFile(imageUri) // Use the Uri to upload
+            .addOnSuccessListener { url ->
+                url.metadata!!.reference!!.downloadUrl
+                    .addOnSuccessListener { uri->
+                        val imgUrl = uri.toString()
+                        val foodData = mapOf("id" to foodID, "food_image" to imgUrl)
+                        myRef.child(foodID.toString()).setValue(foodData)
+                    }
+
+            }
+    }
+
+}
