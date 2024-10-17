@@ -1,5 +1,6 @@
 package com.example.foodmanager
 
+import android.content.Context
 import android.os.Build
 import android.os.Bundle
 import android.widget.Toast
@@ -9,25 +10,24 @@ import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.systemBars
-import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -48,17 +48,19 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shadow
-import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.TextFieldValue
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.foodmanager.ui.theme.FoodManagerTheme
+import com.google.firebase.Firebase
+import com.google.firebase.database.database
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import kotlin.random.Random
 
 class MainActivity : ComponentActivity() {
     @RequiresApi(Build.VERSION_CODES.O)
@@ -68,6 +70,7 @@ class MainActivity : ComponentActivity() {
             FoodManagerTheme {
                 val context = LocalContext.current
                 val db = DatabaseProvider.getDatabase(this)
+                initialLaunchCheck(db.foodDao())
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
@@ -80,7 +83,7 @@ class MainActivity : ComponentActivity() {
                             .fillMaxWidth(),
                         contentAlignment = Alignment.Center
                     ) {
-                        MainActivityHome(foodDao = db.foodDao())
+                        MainActivityHome(foodDao = db.foodDao(), context = context)
                     }
                     // Navigation bar with fixed height
                     Box(
@@ -103,17 +106,15 @@ class MainActivity : ComponentActivity() {
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun MainActivityHome(foodDao: FoodDao) {
+fun MainActivityHome(foodDao: FoodDao, context: Context) {
     var clickedStudent by remember { mutableIntStateOf(0) }
     var showDialogSetDailyKcal by remember { mutableStateOf(false) }
-    // TODO: Temp numbers for
 
     val currentDateTime = remember { LocalDateTime.now() }
     val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
     val formattedDateTime = currentDateTime.format(formatter)
 
-    // Probably needs to be stored into database after app close still needs to keep this data
-    var setDailyKcal by remember { mutableIntStateOf(2500) }
+    var setDailyKcal by remember { mutableIntStateOf(foodDao.getUserProfile().kcalDailyLimit) }
     var totalKcal by remember { mutableIntStateOf(foodDao.getDayTotalKcal(formattedDateTime)) }  // Total kcal from roomdatabase
     var remainingKcal by remember { mutableIntStateOf(0) }  // setDailyKcal - totalKcal
 
@@ -135,7 +136,9 @@ fun MainActivityHome(foodDao: FoodDao) {
             dailyKcal = setDailyKcal.toString(),
             onDailyKcalUpdate = { newKcal -> setDailyKcal = newKcal.toInt() },
             showDialog = showDialogSetDailyKcal,
-            setShowDialog = { showDialogSetDailyKcal = it }
+            setShowDialog = { showDialogSetDailyKcal = it },
+            foodDao = foodDao,
+            context = context
         )
 
         if (food.isEmpty()) {
@@ -145,7 +148,7 @@ fun MainActivityHome(foodDao: FoodDao) {
                 contentAlignment = Alignment.Center // Center both horizontally and vertically
             ) {
                 Text(
-                    text = "NOTHING IS \nHERE",
+                    text = "NOTHING IS \nHERE FOR TODAY",
                     fontSize = MaterialTheme.typography.headlineMedium.fontSize,
                     fontWeight = FontWeight.Bold,
                     color = Color.LightGray,
@@ -257,7 +260,9 @@ fun UpdateDailyKcalDialog(
     dailyKcal: String,
     onDailyKcalUpdate: (String) -> Unit,
     showDialog: Boolean,
-    setShowDialog: (Boolean) -> Unit
+    setShowDialog: (Boolean) -> Unit,
+    foodDao: FoodDao,
+    context: Context
 ) {
     var updatedDailyKcal by remember { mutableStateOf(TextFieldValue(dailyKcal)) }
 
@@ -268,13 +273,27 @@ fun UpdateDailyKcalDialog(
             text = {
                 OutlinedTextField(
                     value = updatedDailyKcal,
-                    onValueChange = { updatedDailyKcal = it },
-                    label = { Text("Daily Calories") }
+                    onValueChange = { newValue ->
+                                        if (newValue.text.all { it.isDigit() }) {
+                                            updatedDailyKcal = newValue
+                                        } else {
+                                            Toast.makeText(context, "Please input numbers only", Toast.LENGTH_SHORT)
+                                                .show()
+                                        }
+                                    },
+                    label = { Text("Daily Calories") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
                 )
             },
             confirmButton = {
                 TextButton(onClick = {
+                    var tempDailyKcal = foodDao.getUserProfile()
+                    tempDailyKcal = tempDailyKcal.copy(
+                        deviceID = foodDao.getUserProfile().deviceID,
+                        kcalDailyLimit = updatedDailyKcal.text.toInt()
+                    )
                     onDailyKcalUpdate(updatedDailyKcal.text)
+                    foodDao.updateUserProfile(tempDailyKcal)
                     setShowDialog(false)
                 }) {
                     Text("Update")
@@ -286,5 +305,22 @@ fun UpdateDailyKcalDialog(
                 }
             }
         )
+    }
+}
+
+fun initialLaunchCheck(foodDao: FoodDao)
+{
+    val database = Firebase.database
+    val myRef = database.getReference("message")
+
+    myRef.setValue("Hello, World!")
+    if(!foodDao.hasProfile())
+    {
+        // TODO: Firebase implementation check connection & check if id exists then random
+        val id = Random.nextInt()
+        foodDao.newUserProfile(UserProfile(
+            deviceID = id,
+            kcalDailyLimit = 0
+        ))
     }
 }

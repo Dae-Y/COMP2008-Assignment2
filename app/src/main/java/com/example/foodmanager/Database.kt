@@ -26,9 +26,31 @@ data class Food(
     @ColumnInfo(name = "food_image") val image: String? // Store the path of the image
 )
 
+// Define dailyKcal entity, this table only uses 1 row.
+// So it only use update.
+@Entity(tableName = "userProfile")
+data class UserProfile(
+    @PrimaryKey var deviceID: Int, // unique id for devices for firebase picture storing
+    @ColumnInfo(name = "daily_Limit") var kcalDailyLimit: Int// daily kcal limit
+)
+
 // Data Access Object, DAO is an interface that defines methods for accessing the database.
 @Dao
 interface FoodDao {
+    // ======================================= Query For dailyKcal Table ======================================= //
+    @Update
+    fun updateUserProfile(userProfile: UserProfile)
+
+    @Insert
+    fun newUserProfile(userProfile: UserProfile) // IMPORTANT: TO BE CALLED ONLY ONCE PER DEVICE
+
+    @Query("SELECT EXISTS(SELECT 1 FROM userProfile)")
+    fun hasProfile(): Boolean
+
+    @Query("SELECT * FROM userProfile")
+    fun getUserProfile(): UserProfile
+
+    // ========================================= Query For Food table ========================================= //
     @Query("SELECT * FROM foods") // Get all foods
     fun getAllFoods(): List<Food>
 
@@ -67,7 +89,7 @@ interface FoodDao {
 // For each DAO class that is associated with the database, the database class
 // must define an abstract method that has zero arguments and returns an
 // instance of the DAO class
-@Database(entities = [Food::class], version = 1)
+@Database(entities = [Food::class, UserProfile::class], version = 1)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun foodDao(): FoodDao
 }

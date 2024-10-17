@@ -36,6 +36,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -46,6 +47,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
@@ -128,8 +130,7 @@ fun AddActivityContent(foodDao: FoodDao) {
 
     Box(
         modifier = Modifier
-            .fillMaxSize()
-            .background(Color.LightGray),
+            .fillMaxSize(),
         contentAlignment = Alignment.TopCenter
     ) {
         LazyColumn(
@@ -158,7 +159,8 @@ fun AddActivityContent(foodDao: FoodDao) {
                     onValueChange = { foodName = it
                                     isNameEmpty = false},
                     label = { Text("Food Name") },
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    textStyle = TextStyle(Color.Black)
                 )
                 if (isNameEmpty) {
                     Text(
@@ -184,6 +186,7 @@ fun AddActivityContent(foodDao: FoodDao) {
                     keyboardOptions =
                     KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number),
                     modifier = Modifier.fillMaxWidth(),
+                    textStyle = TextStyle(Color.Black)
                 )
                 if(isPortionEmpty) {
                     Text(
@@ -320,7 +323,7 @@ fun MealTypeDropdown(
                         onSelect(selectedMealType.name)
                         expanded = false
                     },
-                    contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding,
+                    contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding
                 )
             }
         }
