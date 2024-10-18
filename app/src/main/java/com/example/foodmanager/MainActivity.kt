@@ -7,6 +7,7 @@ import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.annotation.RequiresApi
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -29,13 +30,19 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.Divider
 import androidx.compose.material.LinearProgressIndicator
 import androidx.compose.material.ProgressIndicatorDefaults
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.ArrowDropDown
+import androidx.compose.material.icons.rounded.Home
+import androidx.compose.material.icons.rounded.KeyboardArrowUp
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -48,6 +55,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -135,17 +143,35 @@ fun MainActivityHome(foodDao: FoodDao, context: Context) {
 
     val food by remember { mutableStateOf(foodDao.getFoodsByDate(formattedDateTime)) }
 
-    Column(modifier = Modifier.fillMaxSize(),
-        horizontalAlignment = Alignment.CenterHorizontally) {
-        Spacer(modifier = Modifier.height(20.dp))
-        CurvedTextWithElevation(
-            text = "Set Daily Kcal: $setDailyKcal", onClick = { showDialogSetDailyKcal = true }
+    var expanded by rememberSaveable { mutableStateOf(true) }
+
+    Column(
+        modifier = Modifier.fillMaxSize(),
+        horizontalAlignment = Alignment.CenterHorizontally)
+    {
+        AnimatedVisibility(visible = expanded){
+            Column{ // Wrap the CurvedText composables in a Column
+                Spacer(modifier = Modifier.height(20.dp))
+                CurvedTextWithElevation(
+                    text = "Set Daily Kcal: $setDailyKcal",
+                    onClick = { showDialogSetDailyKcal = true }
+                )
+                Spacer(modifier = Modifier.height(5.dp))
+                CurvedTextWithElevation(text = "Total Kcal: $totalKcal", onClick = {  })
+                Spacer(modifier = Modifier.height(5.dp))
+                remainingKcal = setDailyKcal - totalKcal
+                CurvedTextWithElevation(text = "Remaining Kcal: $remainingKcal", onClick = {  })
+            }
+        }
+
+
+        Icon(
+            imageVector = (if(expanded)Icons.Rounded.KeyboardArrowUp else Icons.Rounded.ArrowDropDown),
+            contentDescription = "Expand/Collapse",
+            tint = Color.Black,
+            modifier = Modifier.fillMaxWidth()
+                .clickable{ expanded = !expanded }
         )
-        Spacer(modifier = Modifier.height(5.dp))
-        CurvedTextWithElevation(text = "Total Kcal: $totalKcal", onClick = {  })
-        Spacer(modifier = Modifier.height(5.dp))
-        remainingKcal = setDailyKcal - totalKcal
-        CurvedTextWithElevation(text = "Remaining Kcal: $remainingKcal", onClick = {  })
 
         UpdateDailyKcalDialog(
             dailyKcal = setDailyKcal.toString(),
