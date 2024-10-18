@@ -7,8 +7,10 @@ import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.annotation.RequiresApi
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -27,21 +29,29 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.LinearProgressIndicator
+import androidx.compose.material.ProgressIndicatorDefaults
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
@@ -60,6 +70,9 @@ import com.example.foodmanager.ui.theme.FoodManagerTheme
 import com.google.firebase.Firebase
 import com.google.firebase.database.database
 import com.google.firebase.storage.storage
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import okhttp3.internal.wait
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import kotlin.random.Random
@@ -117,10 +130,10 @@ fun MainActivityHome(foodDao: FoodDao, context: Context) {
     val formattedDateTime = currentDateTime.format(formatter)
 
     var setDailyKcal by remember { mutableIntStateOf(foodDao.getUserProfile().kcalDailyLimit) }
-    var totalKcal by remember { mutableIntStateOf(foodDao.getDayTotalKcal(formattedDateTime)) }  // Total kcal from roomdatabase
+    val totalKcal by remember { mutableIntStateOf(foodDao.getDayTotalKcal(formattedDateTime)) }  // Total kcal from roomdatabase
     var remainingKcal by remember { mutableIntStateOf(0) }  // setDailyKcal - totalKcal
 
-    var food by remember { mutableStateOf(foodDao.getFoodsByDate(formattedDateTime)) }
+    val food by remember { mutableStateOf(foodDao.getFoodsByDate(formattedDateTime)) }
 
     Column(modifier = Modifier.fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally) {
@@ -185,7 +198,8 @@ fun CurvedTextWithElevation(text: String, onClick: () -> Unit) {
     Card(
         shape = RoundedCornerShape(10.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-        modifier = Modifier.padding(4.dp)
+        modifier = Modifier
+            .padding(4.dp)
             .fillMaxWidth()
             .then(if (isClickable) Modifier.clickable { onClick() } else Modifier)
     ) {
@@ -206,14 +220,12 @@ fun CurvedTextWithElevation(text: String, onClick: () -> Unit) {
 
 @Composable
 fun FoodCard(food: Food, foodDao: FoodDao) {
-//    val bitmap = stringToBitmap(contact.picture)
     val userProfileID = foodDao.getUserProfile().deviceID.toString()
     val foodID = food.id.toString()
 
     val foodRef = Firebase.database.getReference(userProfileID).child(foodID)
 
     var image by remember { mutableStateOf("") }
-
 
     foodRef.get().addOnSuccessListener { snapshot ->
         if (snapshot.exists()) {
@@ -222,20 +234,19 @@ fun FoodCard(food: Food, foodDao: FoodDao) {
         }
     }
 
-
-
     Card(
         modifier = Modifier
             .padding(4.dp)
             .fillMaxWidth(),
         elevation = CardDefaults.cardElevation(4.dp)
     ) {
+
         Row(
-            modifier = Modifier.padding(16.dp)
-                .fillMaxWidth()
+            modifier = Modifier
+                .padding(16.dp)
+                .fillMaxWidth(),
+            horizontalArrangement = Arrangement.Center
         ) {
-
-
             AsyncImage(
                 model = image,
                 placeholder = painterResource(R.drawable.defaultfoodimg),
@@ -249,7 +260,8 @@ fun FoodCard(food: Food, foodDao: FoodDao) {
             )
             Spacer(modifier = Modifier.width(8.dp)) // Changed to width for horizontal spacing
             Column(
-                modifier = Modifier.align(Alignment.CenterVertically)
+                modifier = Modifier
+                    .align(Alignment.CenterVertically)
                     .fillMaxWidth()
             ) {
                 Text(
@@ -329,12 +341,23 @@ fun UpdateDailyKcalDialog(
     }
 }
 
+@Composable
 fun initialLaunchCheck(foodDao: FoodDao)
 {
     if(!foodDao.hasProfile())
     {
         val database = Firebase.database
-        var id = Random.nextInt()
+        var isUnique by remember { mutableStateOf(false) }
+        var id by remember { mutableIntStateOf(Random.nextInt()) }
+
+        // get specific id by calling the id if not null run rand again
+        while (!isUnique)
+        {
+            database.getReference(id.toString()).get().addOnFailureListener {
+                isUnique = true
+            }
+            id = Random.nextInt()
+        }
 
         foodDao.newUserProfile(UserProfile(
             deviceID = id,
@@ -342,11 +365,10 @@ fun initialLaunchCheck(foodDao: FoodDao)
         ))
 
         val myRef = database.getReference(id.toString())
-
         val foodID = 1
         val foodImage = "temp"
         val foodData = mapOf("id" to foodID, "food_image" to foodImage)
-        // get specific id by calling the id if not null run rand again
+
         // Add the foodID and pictureID
         myRef.child(foodID.toString()).setValue(foodData)
     }
