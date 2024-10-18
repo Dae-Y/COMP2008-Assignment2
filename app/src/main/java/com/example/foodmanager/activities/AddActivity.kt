@@ -1,6 +1,9 @@
 package com.example.foodmanager.activities
 
+import android.content.Context
 import android.content.Intent
+import android.graphics.Bitmap
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
@@ -27,27 +30,36 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.foodmanager.DatabaseProvider
@@ -57,6 +69,16 @@ import com.example.foodmanager.MainActivity
 import com.example.foodmanager.NavBar
 import com.example.foodmanager.R
 import com.example.foodmanager.ui.theme.FoodManagerTheme
+import com.google.firebase.Firebase
+import com.google.firebase.database.DatabaseReference
+import com.google.firebase.database.database
+import com.google.firebase.storage.FirebaseStorage
+import com.google.firebase.storage.StorageReference
+import com.google.firebase.storage.storage
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import java.io.File
+import java.io.FileOutputStream
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
@@ -102,22 +124,23 @@ class AddActivity : ComponentActivity() {
 fun AddActivityContent(foodDao: FoodDao) {
     val context = LocalContext.current
 
-    // TODO TEMP DATA
-    var foodImage by remember { mutableStateOf("") }
+    var foodImage by remember { mutableStateOf<Bitmap?>(null) }
     var foodName by remember { mutableStateOf("") }
     var portionSize by remember { mutableStateOf("") }
-    var mealT by remember { mutableStateOf("") }
+    var mealT by remember { mutableStateOf("Breakfast") }
     var foodKcal by remember { mutableStateOf("") }
     // Required remember
     var isNameEmpty by remember { mutableStateOf(false) }
     var isPortionEmpty by remember { mutableStateOf(false) }
-    var isMealTypeEmpty by remember { mutableStateOf(false) }
     var isKcalEmpty by remember { mutableStateOf(false) }
 
     // Getting DateTime [dd:mm:yyyy]
     val currentDateTime = remember { LocalDateTime.now() }
     val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
     val formattedDateTime = currentDateTime.format(formatter)
+
+    val coroutineScope = rememberCoroutineScope()
+    var isLoading by remember { mutableStateOf(false) }
 
     val dataModels = listOf(
         ChoicesDataModel(name = "Breakfast"),
@@ -138,19 +161,12 @@ fun AddActivityContent(foodDao: FoodDao) {
                 .padding(16.dp),
             horizontalAlignment = Alignment.Start
         ) {
-            // TODO: Temp Img placement
             item { Box(
                     modifier = Modifier.fillMaxWidth(),
                     contentAlignment = Alignment.Center
             ){
-                Image(
-                    painter = painterResource(R.drawable.defaultfoodimg),
-                    contentDescription = "Food Image",
-                    modifier = Modifier
-                        .size(150.dp)
-                        .background(Color.LightGray, shape = RoundedCornerShape(50.dp))
-                        .padding(8.dp)
-                )}
+                foodImage = ThumbnailCaptureScreen()
+            }
             }
             item { Spacer(modifier = Modifier.height(16.dp)) }
             item { OutlinedTextField(
@@ -158,7 +174,9 @@ fun AddActivityContent(foodDao: FoodDao) {
                     onValueChange = { foodName = it
                                     isNameEmpty = false},
                     label = { Text("Food Name") },
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    textStyle = TextStyle(Color.Black),
+                    colors = myOutlinedTextFieldColors()
                 )
                 if (isNameEmpty) {
                     Text(
@@ -184,6 +202,8 @@ fun AddActivityContent(foodDao: FoodDao) {
                     keyboardOptions =
                     KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number),
                     modifier = Modifier.fillMaxWidth(),
+                    textStyle = TextStyle(Color.Black),
+                    colors = myOutlinedTextFieldColors()
                 )
                 if(isPortionEmpty) {
                     Text(
@@ -201,15 +221,7 @@ fun AddActivityContent(foodDao: FoodDao) {
                         mealT = newValue
                     },
                     modifier = Modifier.padding(10.dp))
-                if(mealT.isNotEmpty()) isMealTypeEmpty = false
-                if(isMealTypeEmpty) {
-                    Text(
-                        text = "*required",
-                        color = Color.Red,
-                        style = MaterialTheme.typography.bodyMedium,
-                        modifier = Modifier.padding(start = 16.dp)
-                    )
-                }}
+                }
             item { Spacer(modifier = Modifier.height(16.dp)) }
             item { OutlinedTextField(
                     value = foodKcal,
@@ -225,7 +237,8 @@ fun AddActivityContent(foodDao: FoodDao) {
                     label = { Text("Food Kcal") },
                     keyboardOptions =
                     KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number),
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = myOutlinedTextFieldColors()
                 )
                 if(isKcalEmpty) {
                     Text(
@@ -247,10 +260,6 @@ fun AddActivityContent(foodDao: FoodDao) {
                         isPortionEmpty = true
                         hasEmpty = true
                     }
-                    if (mealT.isEmpty()) {
-                        isMealTypeEmpty = true
-                        hasEmpty = true
-                    }
                     if (foodKcal.isEmpty()) {
                         isKcalEmpty = true
                         hasEmpty = true
@@ -258,7 +267,6 @@ fun AddActivityContent(foodDao: FoodDao) {
                     if(!hasEmpty) {
                         foodDao.insertFood(
                             Food(
-                                // TODO: img take not yet implemented
                                 image = R.drawable.defaultfoodimg.toString(),
                                 name = foodName,
                                 portion = portionSize.toInt(),
@@ -267,15 +275,28 @@ fun AddActivityContent(foodDao: FoodDao) {
                                 date = formattedDateTime
                             )
                         )
-                        Toast.makeText(context, "Food added!", Toast.LENGTH_SHORT).show()
-                        val intent = Intent(context, MainActivity::class.java)
-                        context.startActivity(intent)
+
+                        if(foodImage!=null){
+                            saveFood(foodDao.getLatestFoodId(), foodImage, foodDao.getUserProfile().deviceID)
+                        }
+
+//                        Toast.makeText(context, "Food added!", Toast.LENGTH_SHORT).show()
+                        isLoading = true
+                        coroutineScope.launch {
+                            delay(4000L) // Wait for 3 seconds
+                            isLoading = false
+                            val intent = Intent(context, MainActivity::class.java)
+                            context.startActivity(intent)
+                        }
                     }
                 }, modifier = Modifier
                     .fillMaxWidth()
                     .padding(8.dp)
             ) { Text(text = "Add contact into database") } }
         }
+    }
+    if(isLoading){
+        NewFoodAddedFloatingDialog()
     }
 }
 data class ChoicesDataModel(val name: String)
@@ -303,7 +324,8 @@ fun MealTypeDropdown(
             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
             modifier = Modifier
                 .fillMaxWidth()
-                .menuAnchor() // Use menuAnchor to make the field clickable
+                .menuAnchor(),
+            colors = myOutlinedTextFieldColors() // Use menuAnchor to make the field clickable
         )
 
         ExposedDropdownMenu(
@@ -320,10 +342,76 @@ fun MealTypeDropdown(
                         onSelect(selectedMealType.name)
                         expanded = false
                     },
-                    contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding,
+                    contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding
                 )
             }
         }
     }
 }
+@Composable
+fun myOutlinedTextFieldColors() = OutlinedTextFieldDefaults.colors(
+    focusedContainerColor = Color.Transparent,
+    focusedTextColor = Color.Black,
+    focusedBorderColor = Color.Black,
+    focusedLabelColor = Color.Black,
+    unfocusedContainerColor = Color.Transparent,
+    unfocusedTextColor = Color.Black,
+    unfocusedBorderColor = Color.Black,
+    unfocusedLabelColor = Color.Black
+)
 
+@Composable
+fun NewFoodAddedFloatingDialog() {
+    AlertDialog(
+        onDismissRequest = { },
+        title = {
+            Box(
+                modifier = Modifier.fillMaxWidth(),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(text = "Food added!",
+                    textDecoration = TextDecoration.Underline)
+            }
+        },
+        text = {
+            Box(
+                modifier = Modifier.fillMaxWidth(),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator(
+                    color = MaterialTheme.colorScheme.secondary,
+                    trackColor = MaterialTheme.colorScheme.surfaceVariant,
+                    modifier = Modifier.size(150.dp)
+                )
+            }
+        },
+        confirmButton = { },
+        dismissButton = { },
+    )
+}
+
+private fun saveFood(foodID: Int, foodImage: Bitmap?, deviceID: Int) {
+    val storageRef = FirebaseStorage.getInstance().getReference(deviceID.toString())
+
+    val myRef = Firebase.database.getReference(deviceID.toString())
+
+    foodImage?.let { bitmap ->
+        val imageFile = File.createTempFile(foodImage.toString(), ".jpg") // Create a temporary file
+        val outputStream = FileOutputStream(imageFile)
+        bitmap.compress(Bitmap.CompressFormat.JPEG, 100, outputStream) // Save the Bitmap to the file
+        outputStream.close()
+
+        val imageUri = Uri.fromFile(imageFile) // Get the Uri of the file
+
+        storageRef.child(foodID.toString()).putFile(imageUri) // Use the Uri to upload
+            .addOnSuccessListener { url ->
+                url.metadata!!.reference!!.downloadUrl
+                    .addOnSuccessListener { uri->
+                        val imgUrl = uri.toString()
+                        val foodData = mapOf("id" to foodID, "food_image" to imgUrl)
+                        myRef.child(foodID.toString()).setValue(foodData)
+                    }
+
+            }
+    }
+}
