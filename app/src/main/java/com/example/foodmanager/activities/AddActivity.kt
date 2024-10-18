@@ -1,5 +1,6 @@
 package com.example.foodmanager.activities
 
+import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
 import android.net.Uri
@@ -29,7 +30,9 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
@@ -38,12 +41,14 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -53,6 +58,8 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.foodmanager.DatabaseProvider
@@ -68,6 +75,8 @@ import com.google.firebase.database.database
 import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.StorageReference
 import com.google.firebase.storage.storage
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import java.io.File
 import java.io.FileOutputStream
 import java.time.LocalDateTime
@@ -115,7 +124,6 @@ class AddActivity : ComponentActivity() {
 fun AddActivityContent(foodDao: FoodDao) {
     val context = LocalContext.current
 
-    // TODO TEMP DATA
     var foodImage by remember { mutableStateOf<Bitmap?>(null) }
     var foodName by remember { mutableStateOf("") }
     var portionSize by remember { mutableStateOf("") }
@@ -131,6 +139,9 @@ fun AddActivityContent(foodDao: FoodDao) {
     val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
     val formattedDateTime = currentDateTime.format(formatter)
 
+    val coroutineScope = rememberCoroutineScope()
+    var isLoading by remember { mutableStateOf(false) }
+
     val dataModels = listOf(
         ChoicesDataModel(name = "Breakfast"),
         ChoicesDataModel(name = "Lunch"),
@@ -140,7 +151,8 @@ fun AddActivityContent(foodDao: FoodDao) {
 
     Box(
         modifier = Modifier
-            .fillMaxSize(),
+            .fillMaxSize()
+            .background(Color.LightGray),
         contentAlignment = Alignment.TopCenter
     ) {
         LazyColumn(
@@ -149,8 +161,6 @@ fun AddActivityContent(foodDao: FoodDao) {
                 .padding(16.dp),
             horizontalAlignment = Alignment.Start
         ) {
-
-            // TODO: Temp Img placement
             item { Box(
                     modifier = Modifier.fillMaxWidth(),
                     contentAlignment = Alignment.Center
@@ -257,7 +267,6 @@ fun AddActivityContent(foodDao: FoodDao) {
                     if(!hasEmpty) {
                         foodDao.insertFood(
                             Food(
-                                // TODO: img take not yet implemented
                                 image = R.drawable.defaultfoodimg.toString(),
                                 name = foodName,
                                 portion = portionSize.toInt(),
@@ -271,15 +280,23 @@ fun AddActivityContent(foodDao: FoodDao) {
                             saveFood(foodDao.getLatestFoodId(), foodImage, foodDao.getUserProfile().deviceID)
                         }
 
-                        Toast.makeText(context, "Food added!", Toast.LENGTH_SHORT).show()
-                        val intent = Intent(context, MainActivity::class.java)
-                        context.startActivity(intent)
+//                        Toast.makeText(context, "Food added!", Toast.LENGTH_SHORT).show()
+                        isLoading = true
+                        coroutineScope.launch {
+                            delay(4000L) // Wait for 3 seconds
+                            isLoading = false
+                            val intent = Intent(context, MainActivity::class.java)
+                            context.startActivity(intent)
+                        }
                     }
                 }, modifier = Modifier
                     .fillMaxWidth()
                     .padding(8.dp)
             ) { Text(text = "Add contact into database") } }
         }
+    }
+    if(isLoading){
+        NewFoodAddedFloatingDialog()
     }
 }
 data class ChoicesDataModel(val name: String)
@@ -343,6 +360,36 @@ fun myOutlinedTextFieldColors() = OutlinedTextFieldDefaults.colors(
     unfocusedLabelColor = Color.Black
 )
 
+@Composable
+fun NewFoodAddedFloatingDialog() {
+    AlertDialog(
+        onDismissRequest = { },
+        title = {
+            Box(
+                modifier = Modifier.fillMaxWidth(),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(text = "Food added!",
+                    textDecoration = TextDecoration.Underline)
+            }
+        },
+        text = {
+            Box(
+                modifier = Modifier.fillMaxWidth(),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator(
+                    color = MaterialTheme.colorScheme.secondary,
+                    trackColor = MaterialTheme.colorScheme.surfaceVariant,
+                    modifier = Modifier.size(150.dp)
+                )
+            }
+        },
+        confirmButton = { },
+        dismissButton = { },
+    )
+}
+
 private fun saveFood(foodID: Int, foodImage: Bitmap?, deviceID: Int) {
     val storageRef = FirebaseStorage.getInstance().getReference(deviceID.toString())
 
@@ -367,5 +414,4 @@ private fun saveFood(foodID: Int, foodImage: Bitmap?, deviceID: Int) {
 
             }
     }
-
 }

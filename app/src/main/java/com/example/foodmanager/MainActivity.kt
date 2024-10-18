@@ -226,6 +226,7 @@ fun FoodCard(food: Food, foodDao: FoodDao) {
     val foodRef = Firebase.database.getReference(userProfileID).child(foodID)
 
     var image by remember { mutableStateOf("") }
+    var isLoading by remember { mutableStateOf(false) }
 
     foodRef.get().addOnSuccessListener { snapshot ->
         if (snapshot.exists()) {
@@ -247,17 +248,30 @@ fun FoodCard(food: Food, foodDao: FoodDao) {
                 .fillMaxWidth(),
             horizontalArrangement = Arrangement.Center
         ) {
-            AsyncImage(
-                model = image,
-                placeholder = painterResource(R.drawable.defaultfoodimg),
-                error = painterResource(R.drawable.defaultfoodimg),
-                contentScale = ContentScale.Fit,
-                contentDescription = "Contact Picture",
-                modifier = Modifier
-                    .size(100.dp)
-                    .clip(CircleShape)
-                    .align(Alignment.CenterVertically)
-            )
+            Box(modifier = Modifier.align(Alignment.CenterVertically),
+                contentAlignment=Alignment.Center){
+                AsyncImage(
+                    model = image,
+                    error = painterResource(R.drawable.defaultfoodimg),
+                    contentScale = ContentScale.Fit,
+                    contentDescription = "Contact Picture",
+                    modifier = Modifier
+                        .size(100.dp)
+                        .clip(CircleShape),
+                    onLoading = {isLoading=true},
+                    onSuccess = {isLoading=false},
+                    onError = { error ->
+                        isLoading = false
+                    }
+                )
+                if (isLoading) {
+                    CircularProgressIndicator(
+                        color = MaterialTheme.colorScheme.secondary,
+                        trackColor = MaterialTheme.colorScheme.surfaceVariant
+                    )
+                }
+            }
+
             Spacer(modifier = Modifier.width(8.dp)) // Changed to width for horizontal spacing
             Column(
                 modifier = Modifier
