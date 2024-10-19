@@ -392,13 +392,13 @@ fun initialLaunchCheck(foodDao: FoodDao)
         var id by remember { mutableIntStateOf(Random.nextInt()) }
 
         // get specific id by calling the id if not null run rand again
-        while (!isUnique)
-        {
-            database.getReference(id.toString()).get().addOnFailureListener {
-                isUnique = true
-            }
+//        while (!isUnique)
+//        {
+//            database.getReference(id.toString()).get().addOnFailureListener {
+//                isUnique = true
+//            }
             id = Random.nextInt()
-        }
+//        }
 
         foodDao.newUserProfile(UserProfile(
             deviceID = id,
