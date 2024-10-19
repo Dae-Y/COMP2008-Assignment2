@@ -342,7 +342,7 @@ fun UpdateDailyKcalDialog(
     if (showDialog) {
         AlertDialog(
             onDismissRequest = { setShowDialog(false) },
-            title = { Text("Update Daily Calories") },
+            title = { Text("Update Daily Kcal intake") },
             text = {
                 OutlinedTextField(
                     value = updatedDailyKcal,
@@ -367,6 +367,7 @@ fun UpdateDailyKcalDialog(
                     )
                     onDailyKcalUpdate(updatedDailyKcal.text)
                     foodDao.updateUserProfile(tempDailyKcal)
+                    Toast.makeText(context, "Daily Kcal intake Updated", Toast.LENGTH_LONG).show()
                     setShowDialog(false)
                 }) {
                     Text("Update")
