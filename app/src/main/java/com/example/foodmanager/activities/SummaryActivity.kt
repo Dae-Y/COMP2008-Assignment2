@@ -27,6 +27,7 @@ import com.example.foodmanager.Food
 import com.example.foodmanager.NavBar
 import com.example.foodmanager.R
 import com.example.foodmanager.ui.theme.FoodManagerTheme
+import android.content.Intent
 
 class SummaryActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -103,7 +104,14 @@ fun SingleFoodCard(food: Food) {
             .fillMaxWidth()
             .wrapContentHeight(),
         onClick = {
-            Toast.makeText(context, "${food.name} is clicked", Toast.LENGTH_SHORT).show()
+            // Navigate to MoreDetailActivity with food details as extras
+            val intent = Intent(context, MoreDetailActivity::class.java).apply {
+                putExtra("foodName", food.name)
+                putExtra("foodImageUrl", food.image ?: "") // Pass the image URL (or empty string if null)
+                putExtra("mealType", food.mealType) // Pass the meal type
+                putExtra("date", food.date) // Pass the date
+            }
+            context.startActivity(intent)
         }
     ) {
         Row(

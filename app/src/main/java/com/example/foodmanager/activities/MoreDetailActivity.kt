@@ -1,26 +1,13 @@
 package com.example.foodmanager.activities
 
-import android.content.Context
 import android.content.Intent
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.os.Bundle
-import android.view.WindowInsets
-import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.asPaddingValues
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.systemBars
-import androidx.compose.material3.Button
+import androidx.compose.foundation.layout.*
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -29,17 +16,31 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.core.content.ContextCompat.startActivity
 import com.example.foodmanager.MainActivity
 import com.example.foodmanager.NavBar
 import com.example.foodmanager.ui.theme.FoodManagerTheme
+import androidx.activity.viewModels
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Card
+import androidx.compose.runtime.*
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
+import com.example.foodmanager.NutritionViewModel
+import com.example.foodmanager.R
+import java.net.URL
 
 class MoreDetailActivity : ComponentActivity() {
+    private val viewModel: NutritionViewModel by viewModels()
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
+        val foodName = intent.getStringExtra("foodName")
+
         setContent {
             FoodManagerTheme {
                 val context = LocalContext.current
@@ -52,7 +53,7 @@ class MoreDetailActivity : ComponentActivity() {
                             .fillMaxWidth()
                             .weight(1f)
                     ) {
-                        MoreDetailActivityTest()
+                        MoreDetailScreen(foodName ?: "", viewModel)
                     }
                     Box(
                         modifier = Modifier
@@ -64,55 +65,55 @@ class MoreDetailActivity : ComponentActivity() {
             }
         }
 
-        // Handle back press using OnBackPressedDispatcher
+        foodName?.let {
+            viewModel.fetchNutritionData(it)
+        }
+
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
-                // Navigate back to MainActivity and clear the activity stack
                 val intent = Intent(this@MoreDetailActivity, MainActivity::class.java)
                 intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK
                 startActivity(intent)
-                finish()  // Close the current activity
+                finish()
             }
         })
     }
 }
 
 @Composable
-fun MoreDetailActivityTest() {
-    // Main content of MoreDetailActivity
-    val context = LocalContext.current
-    Box(
+fun MoreDetailScreen(foodName: String, viewModel: NutritionViewModel) {
+    val nutritionData by viewModel.nutritionData.collectAsState()
+    val loading by viewModel.loading.collectAsState()
+    val errorMessage by viewModel.errorMessage.collectAsState()
+
+    Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.Magenta),  // Set background color for the content
-        contentAlignment = Alignment.Center
+            .padding(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
     ) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(
-                text = "Summary",
-                fontSize = MaterialTheme.typography.displayMedium.fontSize,  // Using Material3 typography
-                fontWeight = FontWeight.Bold,
-                color = Color.White
-            )
-            Spacer(modifier = Modifier.height(40.dp))  // Space between the text and the button
-
-            // Button to trigger some action
-            Button(onClick = { testBtn(context) }) {
-                Text(text = "testBtn")
+        if (loading) {
+            CircularProgressIndicator(modifier = Modifier.padding(16.dp))
+        }
+        errorMessage?.let {
+            if (it.isNotEmpty()) {
+                Text(text = it)
             }
         }
+        nutritionData?.let { data ->
+            Text(text = "Food: $foodName")
+            Text(text = "Calories: ${data.nf_calories} kcal")
+            Text(text = "Fat: ${data.nf_total_fat} g")
+            Text(text = "Saturated Fat: ${data.nf_saturated_fat} g")
+            Text(text = "Cholesterol: ${data.nf_cholesterol} mg")
+            Text(text = "Sodium: ${data.nf_sodium} mg")
+            Text(text = "Carbohydrates: ${data.nf_total_carbohydrate} g")
+            Text(text = "Dietary Fiber: ${data.nf_dietary_fiber} g")
+            Text(text = "Sugars: ${data.nf_sugars} g")
+            Text(text = "Protein: ${data.nf_protein} g")
+            Text(text = "Potassium: ${data.nf_potassium} mg")
+            Text(text = "Phosphorus: ${data.nf_p} mg")
+        }
     }
-}
-
-@Composable
-@Preview
-fun MoreDetailActivityPreview() {
-    MoreDetailActivityTest()
-}
-
-private fun testBtn(context: Context) {
-    // Example button action: display a toast and navigate to MainActivity
-    Toast.makeText(context, "Item added into Database", Toast.LENGTH_LONG).show()
-    val intent = Intent(context, MainActivity::class.java)
-    context.startActivity(intent)
 }
