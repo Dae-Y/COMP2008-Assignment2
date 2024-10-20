@@ -32,8 +32,6 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.foodmanager.NutritionViewModel
-import com.example.foodmanager.R
-import java.net.URL
 
 class MoreDetailActivity : ComponentActivity() {
     private val viewModel: NutritionViewModel by viewModels()
@@ -41,6 +39,7 @@ class MoreDetailActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val foodName = intent.getStringExtra("foodName")
+        val portionSize = intent.getIntExtra("portionSize", 1) // Default to 1 if not provided
 
         setContent {
             FoodManagerTheme {
@@ -54,7 +53,7 @@ class MoreDetailActivity : ComponentActivity() {
                             .fillMaxWidth()
                             .weight(1f)
                     ) {
-                        MoreDetailScreen(foodName ?: "", viewModel)
+                        MoreDetailScreen(foodName ?: "", portionSize, viewModel)
                     }
                     Box(
                         modifier = Modifier
@@ -82,7 +81,7 @@ class MoreDetailActivity : ComponentActivity() {
 }
 
 @Composable
-fun MoreDetailScreen(foodName: String, viewModel: NutritionViewModel) {
+fun MoreDetailScreen(foodName: String, portionSize: Int, viewModel: NutritionViewModel) {
     val nutritionData by viewModel.nutritionData.collectAsState()
     val loading by viewModel.loading.collectAsState()
     val errorMessage by viewModel.errorMessage.collectAsState()
@@ -105,22 +104,31 @@ fun MoreDetailScreen(foodName: String, viewModel: NutritionViewModel) {
         }
 
         nutritionData?.let { data ->
+            // Multiply values by portionSize
+            val servingQty = data.serving_qty * portionSize
+            val servingUnit = data.serving_unit
+            val servingWeight = data.serving_weight_grams * portionSize
+            val calories = data.nf_calories * portionSize
+            val totalFat = data.nf_total_fat * portionSize
+            val saturatedFat = data.nf_saturated_fat * portionSize
+            val cholesterol = data.nf_cholesterol * portionSize
+            val sodium = data.nf_sodium * portionSize
+            val carbohydrate = data.nf_total_carbohydrate * portionSize
+            val dietaryFiber = data.nf_dietary_fiber * portionSize
+            val sugars = data.nf_sugars * portionSize
+            val protein = data.nf_protein * portionSize
+            val potassium = data.nf_potassium * portionSize
+            val phosphorus = data.nf_p * portionSize
+
+            // Display the food name and calculated values
             Text(
                 text = "Food: $foodName",
                 fontWeight = FontWeight.Bold,
                 style = MaterialTheme.typography.titleLarge,
                 modifier = Modifier.padding(bottom = 8.dp)
             )
-
-
-            // about here you can put the food image
-
-
-            //
-
-
-            Text(text = "Serving Size: ${data.serving_qty} ${data.serving_unit}")
-            Text(text = "Weight: ${data.serving_weight_grams} grams")
+            Text(text = "Serving Size: $servingQty $servingUnit")
+            Text(text = "Weight: $servingWeight grams")
 
             Spacer(modifier = Modifier.height(16.dp))
 
@@ -134,17 +142,17 @@ fun MoreDetailScreen(foodName: String, viewModel: NutritionViewModel) {
                         modifier = Modifier.padding(bottom = 8.dp)
                     )
 
-                    NutritionRow(label = "Calories", value = "${data.nf_calories} kcal")
-                    NutritionRow(label = "Total Fat", value = "${data.nf_total_fat} g")
-                    NutritionRow(label = "Saturated Fat", value = "${data.nf_saturated_fat} g")
-                    NutritionRow(label = "Cholesterol", value = "${data.nf_cholesterol} mg")
-                    NutritionRow(label = "Sodium", value = "${data.nf_sodium} mg")
-                    NutritionRow(label = "Carbohydrates", value = "${data.nf_total_carbohydrate} g")
-                    NutritionRow(label = "Dietary Fiber", value = "${data.nf_dietary_fiber} g")
-                    NutritionRow(label = "Sugars", value = "${data.nf_sugars} g")
-                    NutritionRow(label = "Protein", value = "${data.nf_protein} g")
-                    NutritionRow(label = "Potassium", value = "${data.nf_potassium} mg")
-                    NutritionRow(label = "Phosphorus", value = "${data.nf_p} mg")
+                    NutritionRow(label = "Calories", value = "$calories kcal")
+                    NutritionRow(label = "Total Fat", value = "$totalFat g")
+                    NutritionRow(label = "Saturated Fat", value = "$saturatedFat g")
+                    NutritionRow(label = "Cholesterol", value = "$cholesterol mg")
+                    NutritionRow(label = "Sodium", value = "$sodium mg")
+                    NutritionRow(label = "Carbohydrates", value = "$carbohydrate g")
+                    NutritionRow(label = "Dietary Fiber", value = "$dietaryFiber g")
+                    NutritionRow(label = "Sugars", value = "$sugars g")
+                    NutritionRow(label = "Protein", value = "$protein g")
+                    NutritionRow(label = "Potassium", value = "$potassium mg")
+                    NutritionRow(label = "Phosphorus", value = "$phosphorus mg")
                 }
             }
         }

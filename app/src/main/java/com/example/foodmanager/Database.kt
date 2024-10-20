@@ -38,6 +38,11 @@ data class UserProfile(
 // Data Access Object, DAO is an interface that defines methods for accessing the database.
 @Dao
 interface FoodDao {
+
+    // ======================== When API fails, open up nutrition manually ===================================== //
+    // @Insert
+    // fun insertNutrition(nutrition: Nutrition)
+
     // ======================================= Query For dailyKcal Table ======================================= //
     @Update
     fun updateUserProfile(userProfile: UserProfile)

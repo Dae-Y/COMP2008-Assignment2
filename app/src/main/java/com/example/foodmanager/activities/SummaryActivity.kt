@@ -107,14 +107,12 @@ fun SingleFoodCard(food: Food, profileID: Int) {
     val foodRef = Firebase.database.getReference(profileID.toString()).child(food.id.toString())
     var image by remember { mutableStateOf(R.drawable.defaultfoodimg.toString()) }
     var isLoading by remember { mutableStateOf(false) }
-
     foodRef.get().addOnSuccessListener { snapshot ->
         if (snapshot.exists()) {
             val foodData = snapshot.value as Map<String, Any>
             image = foodData["food_image"] as String
         }
     }
-
     Card(
         modifier = Modifier
             .padding(8.dp)
@@ -127,6 +125,7 @@ fun SingleFoodCard(food: Food, profileID: Int) {
                 putExtra("foodImageUrl", image) // Pass the image URL (or empty string if null)
                 putExtra("mealType", food.mealType) // Pass the meal type
                 putExtra("date", food.date) // Pass the date
+                putExtra("portionSize", food.portion) // Pass the portion size
             }
             context.startActivity(intent)
         }
@@ -134,47 +133,50 @@ fun SingleFoodCard(food: Food, profileID: Int) {
         Row(
             verticalAlignment = Alignment.CenterVertically
         ) {
-        Box(
-            modifier = Modifier
-                .size(100.dp)
-                .padding(8.dp) // Size and padding for the image box
-        ) {
-            Box(modifier = Modifier.align(Alignment.Center),
-                contentAlignment=Alignment.Center){
-                AsyncImage(
-                    model = image,
-                    error = painterResource(R.drawable.defaultfoodimg),
-                    contentScale = ContentScale.Fit,
-                    contentDescription = "Contact Picture",
-                    modifier = Modifier
-                        .size(100.dp)
-                        .clip(CircleShape),
-                    onLoading = {isLoading=true},
-                    onSuccess = {isLoading=false},
-                    onError = { error ->
-                        isLoading = false
-                    }
-                )
-                if (isLoading) {
-                    CircularProgressIndicator(
-                        color = MaterialTheme.colorScheme.secondary,
-                        trackColor = MaterialTheme.colorScheme.surfaceVariant
+            Box(
+                modifier = Modifier
+                    .size(100.dp)
+                    .padding(8.dp)
+            ) {
+                Box(modifier = Modifier.align(Alignment.Center), contentAlignment = Alignment.Center) {
+                    AsyncImage(
+                        model = image,
+                        error = painterResource(R.drawable.defaultfoodimg),
+                        contentScale = ContentScale.Fit,
+                        contentDescription = "Contact Picture",
+                        modifier = Modifier
+                            .size(100.dp)
+                            .clip(CircleShape),
+                        onLoading = { isLoading = true },
+                        onSuccess = { isLoading = false },
+                        onError = { error ->
+                            isLoading = false
+                        }
                     )
+                    if (isLoading) {
+                        CircularProgressIndicator(
+                            color = MaterialTheme.colorScheme.secondary,
+                            trackColor = MaterialTheme.colorScheme.surfaceVariant
+                        )
+                    }
                 }
             }
-        }
-        Column(
-            modifier = Modifier.padding(4.dp)
-        ) {
-            Text(text = "Food Name: ${food.name}")
-            Text(text = "Meal Type: ${food.mealType}")
-            Text(text = "Portion: ${food.portion}")
-            Text(text = "Calories: ${food.kcal} kcal")
-            Text(text = "Date: ${food.date}")
+            Column(
+                modifier = Modifier.padding(4.dp)
+            ) {
+                Text(text = "Food Name: ${food.name}")
+                Text(text = "Meal Type: ${food.mealType}")
+                Text(text = "Portion: ${food.portion}")
+                Text(text = "Calories: ${food.kcal} kcal")
+                Text(text = "Date: ${food.date}")
             }
         }
     }
 }
+
+
+
+
 
 
 @Composable
