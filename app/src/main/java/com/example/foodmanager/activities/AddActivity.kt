@@ -160,10 +160,10 @@ fun AddActivityContent(foodDao: FoodDao, viewModel: NutritionViewModel) {
                     value = foodName,
                     onValueChange = { foodName = it
                                     isNameEmpty = false
-                                    viewModel.fetchNutritionData(foodName)
-                                    viewModel.nutritionData.value?.let { nutritionData ->
-                                        foodKcal = nutritionData.nf_calories.toString()
-                                    }
+//                                    viewModel.fetchNutritionData(foodName)
+//                                    viewModel.nutritionData.value?.let { nutritionData ->
+//                                        foodKcal = nutritionData.nf_calories.toString()
+//                                    }
                     },
                     label = { Text("Food Name") },
                     modifier = Modifier.fillMaxWidth(),
@@ -190,7 +190,7 @@ fun AddActivityContent(foodDao: FoodDao, viewModel: NutritionViewModel) {
                                 .show()
                         }
                     },
-                    label = { Text("Portion Size (grams)") },
+                    label = { Text("Portion Size (1,2 etc.)") },
                     keyboardOptions =
                     KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number),
                     modifier = Modifier.fillMaxWidth(),
@@ -263,13 +263,16 @@ fun AddActivityContent(foodDao: FoodDao, viewModel: NutritionViewModel) {
                                 name = foodName,
                                 portion = portionSize.toInt(),
                                 mealType = mealT,
-                                kcal = foodKcal.toInt(),
+                                kcal = foodKcal.toDouble(),
                                 date = formattedDateTime
                             )
                         )
 
                         if(foodImage!=null){
-                           saveFood(foodDao.getLatestFoodId(), foodImage, foodDao.getUserProfile().deviceID)
+                           saveFood(foodDao,
+                               foodDao.getLatestFoodId(),
+                               foodImage,
+                               foodDao.getUserProfile().deviceID)
                         }
 
                         isLoading = true
@@ -381,28 +384,56 @@ fun NewFoodAddedFloatingDialog() {
     )
 }
 
-private fun saveFood(foodID: Int, foodImage: Bitmap?, deviceID: Int){
+private fun saveFood(foodDao: FoodDao,
+                     foodID: Int,
+                     foodImage: Bitmap?,
+                     deviceID: Int){
     val storageRef = FirebaseStorage.getInstance().getReference(deviceID.toString())
 
     val myRef = Firebase.database.getReference(deviceID.toString())
 
-    foodImage?.let { bitmap ->
-        val imageFile = File.createTempFile(foodImage.toString(), ".jpg") // Create a temporary file
-        val outputStream = FileOutputStream(imageFile)
-        bitmap.compress(Bitmap.CompressFormat.JPEG, 100, outputStream) // Save the Bitmap to the file
-        outputStream.close()
+    if(foodImage != null){
+        foodImage.let { bitmap ->
+            val imageFile = File.createTempFile(foodImage.toString(), ".jpg") // Create a temporary file
+            val outputStream = FileOutputStream(imageFile)
+            bitmap.compress(Bitmap.CompressFormat.JPEG, 100, outputStream) // Save the Bitmap to the file
+            outputStream.close()
 
-        val imageUri = Uri.fromFile(imageFile) // Get the Uri of the file
+            val imageUri = Uri.fromFile(imageFile) // Get the Uri of the file
 
-        storageRef.child(foodID.toString()).putFile(imageUri) // Use the Uri to upload
-            .addOnSuccessListener { url ->
-                url.metadata!!.reference!!.downloadUrl
-                    .addOnSuccessListener { uri->
-                        val imgUrl = uri.toString()
-                        val foodData = mapOf("id" to foodID, "food_image" to imgUrl)
-                        myRef.child(foodID.toString()).setValue(foodData)
-                    }
-
-            }
+            storageRef.child(foodID.toString()).putFile(imageUri) // Use the Uri to upload
+                .addOnSuccessListener { url ->
+                    url.metadata!!.reference!!.downloadUrl
+                        .addOnSuccessListener { uri->
+                            val imgUrl = uri.toString()
+                            val foodData = mapOf("id" to foodID, "food_image" to imgUrl)
+                            myRef.child(foodID.toString()).setValue(foodData)
+//                            foodDao.insertFood(
+//                                Food(
+//                                    image = imgUrl,
+//                                    name = foodName,
+//                                    portion = portionSize.toInt(),
+//                                    mealType = mealT,
+//                                    kcal = foodKcal.toInt(),
+//                                    date = formattedDateTime
+//                                )
+//                            )
+                        }
+                }
+        }
     }
+    else
+    {
+//        foodDao.insertFood(
+//            Food(
+//                image = R.drawable.defaultfoodimg.toString(),
+//                name = foodName,
+//                portion = portionSize.toInt(),
+//                mealType = mealT,
+//                kcal = foodKcal.toInt(),
+//                date = formattedDateTime
+//            )
+//        )
+    }
+
 }
