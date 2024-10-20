@@ -184,7 +184,7 @@ fun SummaryActScreenPreview() {
         Food(
             name = "Apple",
             portion = 150,
-            kcal = 95,
+            kcal = 95.0,
             mealType = "Snack",
             date = "2024-10-04",
             image = null // No image for preview
@@ -192,7 +192,7 @@ fun SummaryActScreenPreview() {
         Food(
             name = "Pasta",
             portion = 300,
-            kcal = 400,
+            kcal = 400.0,
             mealType = "Lunch",
             date = "2024-10-04",
             image = null // No image for preview

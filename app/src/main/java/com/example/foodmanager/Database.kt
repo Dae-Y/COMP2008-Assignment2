@@ -21,7 +21,7 @@ data class Food(
     @ColumnInfo(name = "food_name") val name: String,
     @ColumnInfo(name = "portion_size") val portion: Int,
     @ColumnInfo(name = "meal_type") val mealType: String,
-    @ColumnInfo(name = "kcal") val kcal: Int,
+    @ColumnInfo(name = "kcal") val kcal: Double,
     @ColumnInfo(name = "date") val date: String, // Use "yyyy-MM-dd" format for consistency
     @ColumnInfo(name = "food_image") val image: String? // Store the path of the image
 )
@@ -31,7 +31,7 @@ data class Food(
 @Entity(tableName = "userProfile")
 data class UserProfile(
     @PrimaryKey var deviceID: Int, // unique id for devices for firebase picture storing
-    @ColumnInfo(name = "daily_Limit") var kcalDailyLimit: Int// daily kcal limit
+    @ColumnInfo(name = "daily_Limit") var kcalDailyLimit: Double// daily kcal limit
 )
 
 // Data Access Object, DAO is an interface that defines methods for accessing the database.

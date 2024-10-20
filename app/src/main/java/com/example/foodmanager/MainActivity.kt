@@ -45,6 +45,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableDoubleStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -126,9 +127,9 @@ fun MainActivityHome(foodDao: FoodDao, context: Context) {
     val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
     val formattedDateTime = currentDateTime.format(formatter)
 
-    var setDailyKcal by remember { mutableIntStateOf(foodDao.getUserProfile().kcalDailyLimit) }
+    var setDailyKcal by remember { mutableDoubleStateOf(foodDao.getUserProfile().kcalDailyLimit) }
     val totalKcal by remember { mutableIntStateOf(foodDao.getDayTotalKcal(formattedDateTime)) }  // Total kcal from roomdatabase
-    var remainingKcal by remember { mutableIntStateOf(0) }  // setDailyKcal - totalKcal
+    var remainingKcal by remember { mutableDoubleStateOf(0.0) }  // setDailyKcal - totalKcal
 
     val food by remember { mutableStateOf(foodDao.getFoodsByDate(formattedDateTime)) }
 
@@ -164,7 +165,7 @@ fun MainActivityHome(foodDao: FoodDao, context: Context) {
 
         UpdateDailyKcalDialog(
             dailyKcal = setDailyKcal.toString(),
-            onDailyKcalUpdate = { newKcal -> setDailyKcal = newKcal.toInt() },
+            onDailyKcalUpdate = { newKcal -> setDailyKcal = newKcal.toDouble() },
             showDialog = showDialogSetDailyKcal,
             setShowDialog = { showDialogSetDailyKcal = it },
             foodDao = foodDao,
@@ -346,7 +347,8 @@ fun UpdateDailyKcalDialog(
                 OutlinedTextField(
                     value = updatedDailyKcal,
                     onValueChange = { newValue ->
-                                        if (newValue.text.all { it.isDigit() }) {
+                                        val text = newValue.text
+                                        if (text.isEmpty() || text.toDoubleOrNull() != null) {
                                             updatedDailyKcal = newValue
                                         } else {
                                             Toast.makeText(context, "Please input numbers only", Toast.LENGTH_SHORT)
@@ -362,7 +364,7 @@ fun UpdateDailyKcalDialog(
                     var tempDailyKcal = foodDao.getUserProfile()
                     tempDailyKcal = tempDailyKcal.copy(
                         deviceID = foodDao.getUserProfile().deviceID,
-                        kcalDailyLimit = updatedDailyKcal.text.toInt()
+                        kcalDailyLimit = updatedDailyKcal.text.toDouble()
                     )
                     onDailyKcalUpdate(updatedDailyKcal.text)
                     foodDao.updateUserProfile(tempDailyKcal)
@@ -395,7 +397,7 @@ fun initialLaunchCheck(foodDao: FoodDao)
 
         foodDao.newUserProfile(UserProfile(
             deviceID = id,
-            kcalDailyLimit = 0
+            kcalDailyLimit = 0.0
         ))
 
         val myRef = database.database.getReference(id.toString())
