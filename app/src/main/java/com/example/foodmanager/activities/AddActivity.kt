@@ -351,7 +351,10 @@ fun AddActivityContent(foodDao: FoodDao, viewModel: NutritionViewModel) {
         NewFoodAddedFloatingDialog()
     }
     if(showNutrientsDialog){
-//        UpdateDailyKcalDialog()
+        UpdateDailyKcalDialog(showDialog = showNutrientsDialog,
+            setShowDialog = { showNutrientsDialog = it },
+            foodDao = foodDao,
+            context = context)
     }
 }
 data class ChoicesDataModel(val name: String)
@@ -510,24 +513,23 @@ private fun saveFood(
 
 @Composable
 fun UpdateDailyKcalDialog(
-    dailyKcal: String,
-    onDailyKcalUpdate: (String) -> Unit,
     showDialog: Boolean,
     setShowDialog: (Boolean) -> Unit,
     foodDao: FoodDao,
     context: Context
 ) {
     var updatedDailyKcal by remember { mutableStateOf("") }
-//    val nf_calories: Double,
-//    val nf_total_fat: Double,
-//    val nf_saturated_fat: Double,
-//    val nf_cholesterol: Double,
-//    val nf_sodium: Double,
-//    val nf_total_carbohydrate: Double,
-//    val nf_dietary_fiber: Double,
-//    val nf_sugars: Double,
-//    val nf_protein: Double,
-//    val nf_potassium: Double,
+//    @ColumnInfo(name = "serving_weight") val servingWeight: Double,
+//    @ColumnInfo(name = "calories") val calories: Double,
+//    @ColumnInfo(name = "total_fat") val totalFat: Double,
+//    @ColumnInfo(name = "sat_fat") val saturatedFat: Double,
+//    @ColumnInfo(name = "cholesterol") val cholesterol: Double,
+//    @ColumnInfo(name = "sodium") val sodium: Double,
+//    @ColumnInfo(name = "carbohydrate") val carbohydrate: Double,
+//    @ColumnInfo(name = "sugars") val sugars: Double,
+//    @ColumnInfo(name = "protein") val protein: Double,
+//    @ColumnInfo(name = "potassium") val potassium: Double,
+//    @ColumnInfo(name = "phosphorus") val phosphorus: Double
 
     if (showDialog) {
         AlertDialog(
@@ -540,18 +542,72 @@ fun UpdateDailyKcalDialog(
                         .padding(16.dp),
                     horizontalAlignment = Alignment.Start
                 ){
-                    item { OutlinedTextField(
+                    item { NutTextField(
                         value = updatedDailyKcal,
-                        onValueChange = { newValue ->
-                            if (validateInputDouble(newValue, context)) {
-                                updatedDailyKcal = newValue
-                            }
-                        },
-                        label = { Text("Daily Calories") },
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
-                    ) }
-
-
+                        onValueChange = { newValue -> updatedDailyKcal = newValue },
+                        label = "serving weight",
+                        context = context
+                    )  }
+                    item { NutTextField(
+                        value = updatedDailyKcal,
+                        onValueChange = { newValue -> updatedDailyKcal = newValue },
+                        label = "calories",
+                        context = context
+                    )  }
+                    item { NutTextField(
+                        value = updatedDailyKcal,
+                        onValueChange = { newValue -> updatedDailyKcal = newValue },
+                        label = "fat",
+                        context = context
+                    )  }
+                    item { NutTextField(
+                        value = updatedDailyKcal,
+                        onValueChange = { newValue -> updatedDailyKcal = newValue },
+                        label = "saturated fat",
+                        context = context
+                    )  }
+                    item { NutTextField(
+                        value = updatedDailyKcal,
+                        onValueChange = { newValue -> updatedDailyKcal = newValue },
+                        label = "cholesterol",
+                        context = context
+                    )  }
+                    item { NutTextField(
+                        value = updatedDailyKcal,
+                        onValueChange = { newValue -> updatedDailyKcal = newValue },
+                        label = "sodium",
+                        context = context
+                    )  }
+                    item { NutTextField(
+                        value = updatedDailyKcal,
+                        onValueChange = { newValue -> updatedDailyKcal = newValue },
+                        label = "carbohydrate",
+                        context = context
+                    )  }
+                    item { NutTextField(
+                        value = updatedDailyKcal,
+                        onValueChange = { newValue -> updatedDailyKcal = newValue },
+                        label = "sugars",
+                        context = context
+                    )  }
+                    item { NutTextField(
+                        value = updatedDailyKcal,
+                        onValueChange = { newValue -> updatedDailyKcal = newValue },
+                        label = "protein",
+                        context = context
+                    )  }
+                    item { NutTextField(
+                        value = updatedDailyKcal,
+                        onValueChange = { newValue -> updatedDailyKcal = newValue },
+                        label = "potassium",
+                        context = context
+                    )  }
+                    item { NutTextField(
+                        value = updatedDailyKcal,
+                        onValueChange = { newValue -> updatedDailyKcal = newValue },
+                        label = "phosphorus",
+                        context = context
+                    )  }
                 }
 
             },
@@ -572,6 +628,25 @@ fun UpdateDailyKcalDialog(
             }
         )
     }
+}
+
+@Composable
+fun NutTextField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    label: String,
+    context: Context
+) {
+    OutlinedTextField(
+        value = value,
+        onValueChange = { newValue ->
+            if (validateInputDouble(newValue, context)) {
+                onValueChange(newValue)
+            }
+        },
+        label = { Text(label) },
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+    )
 }
 
 fun validateInputDouble(text: String, context: Context): Boolean {
