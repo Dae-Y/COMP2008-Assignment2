@@ -46,7 +46,7 @@ class MoreDetailActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val foodID = intent.getStringExtra("foodID")
-        val foodIMG = intent.getStringExtra("foodIMG")
+        val foodIMG = intent.getStringExtra("foodImageUrl")
         val foodName = intent.getStringExtra("foodName")
         val portionSize = intent.getIntExtra("portionSize", 1) // Default to 1 if not provided
         val db = DatabaseProvider.getDatabase(this)

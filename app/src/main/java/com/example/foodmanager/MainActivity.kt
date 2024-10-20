@@ -248,7 +248,6 @@ fun FoodCard(food: Food, foodDao: FoodDao, context: Context) {
             // Navigate to MoreDetailActivity with food details as extras
             val intent = Intent(context, MoreDetailActivity::class.java).apply {
                 putExtra("foodID", food.id.toString())
-                putExtra("foodIMG", food.image)
                 putExtra("foodName", food.name)
                 putExtra("foodImageUrl", food.image) // Pass the image URL (or empty string if null)
                 putExtra("mealType", food.mealType) // Pass the meal type
