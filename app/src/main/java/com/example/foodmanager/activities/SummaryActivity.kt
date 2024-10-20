@@ -104,16 +104,16 @@ fun SummaryActivityContent(foods: List<Food>, profileID: Int) {
 @Composable
 fun SingleFoodCard(food: Food, profileID: Int) {
     val context = LocalContext.current
-    val foodRef = Firebase.database.getReference(profileID.toString()).child(food.id.toString())
-    var image by remember { mutableStateOf(R.drawable.defaultfoodimg.toString()) }
+//    val foodRef = Firebase.database.getReference(profileID.toString()).child(food.id.toString())
+//    var image by remember { mutableStateOf(R.drawable.defaultfoodimg.toString()) }
     var isLoading by remember { mutableStateOf(false) }
 
-    foodRef.get().addOnSuccessListener { snapshot ->
-        if (snapshot.exists()) {
-            val foodData = snapshot.value as Map<String, Any>
-            image = foodData["food_image"] as String
-        }
-    }
+//    foodRef.get().addOnSuccessListener { snapshot ->
+//        if (snapshot.exists()) {
+//            val foodData = snapshot.value as Map<String, Any>
+//            image = foodData["food_image"] as String
+//        }
+//    }
 
     Card(
         modifier = Modifier
@@ -124,7 +124,7 @@ fun SingleFoodCard(food: Food, profileID: Int) {
             // Navigate to MoreDetailActivity with food details as extras
             val intent = Intent(context, MoreDetailActivity::class.java).apply {
                 putExtra("foodName", food.name)
-                putExtra("foodImageUrl", image) // Pass the image URL (or empty string if null)
+                putExtra("foodImageUrl", food.image) // Pass the image URL (or empty string if null)
                 putExtra("mealType", food.mealType) // Pass the meal type
                 putExtra("date", food.date) // Pass the date
             }
@@ -142,7 +142,7 @@ fun SingleFoodCard(food: Food, profileID: Int) {
             Box(modifier = Modifier.align(Alignment.Center),
                 contentAlignment=Alignment.Center){
                 AsyncImage(
-                    model = image,
+                    model = food.image,
                     error = painterResource(R.drawable.defaultfoodimg),
                     contentScale = ContentScale.Fit,
                     contentDescription = "Contact Picture",

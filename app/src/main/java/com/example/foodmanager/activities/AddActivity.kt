@@ -10,7 +10,9 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
 import androidx.annotation.RequiresApi
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -23,7 +25,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
@@ -31,12 +36,13 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -116,10 +122,12 @@ fun AddActivityContent(foodDao: FoodDao, viewModel: NutritionViewModel) {
     var portionSize by remember { mutableStateOf("") }
     var mealT by remember { mutableStateOf("Breakfast") }
     var foodKcal by remember { mutableStateOf("") }
+
     // Required remember
     var isNameEmpty by remember { mutableStateOf(false) }
     var isPortionEmpty by remember { mutableStateOf(false) }
     var isKcalEmpty by remember { mutableStateOf(false) }
+    var isAPIgetFood by remember { mutableStateOf(false) }
 
     // Getting DateTime [dd:mm:yyyy]
     val currentDateTime = remember { LocalDateTime.now() }
@@ -160,15 +168,38 @@ fun AddActivityContent(foodDao: FoodDao, viewModel: NutritionViewModel) {
                     value = foodName,
                     onValueChange = { foodName = it
                                     isNameEmpty = false
-//                                    viewModel.fetchNutritionData(foodName)
-//                                    viewModel.nutritionData.value?.let { nutritionData ->
-//                                        foodKcal = nutritionData.nf_calories.toString()
-//                                    }
                     },
                     label = { Text("Food Name") },
                     modifier = Modifier.fillMaxWidth(),
                     textStyle = TextStyle(Color.Black),
-                    colors = myOutlinedTextFieldColors()
+                    colors = myOutlinedTextFieldColors(),
+                    trailingIcon = {  // Add a trailing icon
+                        IconButton(onClick = {
+                            viewModel.fetchNutritionData(foodName)
+                            viewModel.nutritionData.value?.let { nutritionData ->
+                                foodKcal = nutritionData.nf_calories.toString()
+                                isAPIgetFood = true
+                            }
+                            if(!isAPIgetFood){
+                                Toast.makeText(context,
+                                    "API did not found food ${foodName}!,\nPlease enter nutrients manually",
+                                    Toast.LENGTH_LONG)
+                                    .show()
+                            }
+                        },
+                            modifier = Modifier
+                                .padding(end = 10.dp)
+                                .border(
+                                    width = 1.dp, // Border width
+                                    color = Color.Gray, // Border color
+                                    shape = CircleShape
+                            )) {
+                            Icon(
+                                imageVector = Icons.Filled.Search,
+                                contentDescription = "Search"
+                            )
+                        }
+                }
                 )
                 if (isNameEmpty) {
                     Text(
@@ -231,6 +262,7 @@ fun AddActivityContent(foodDao: FoodDao, viewModel: NutritionViewModel) {
                     KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number),
                     modifier = Modifier.fillMaxWidth(),
                     colors = myOutlinedTextFieldColors()
+                    //TODO: Add more nutrients btn
                 )
                 if(isKcalEmpty) {
                     Text(
@@ -257,23 +289,14 @@ fun AddActivityContent(foodDao: FoodDao, viewModel: NutritionViewModel) {
                         hasEmpty = true
                     }
                     if(!hasEmpty) {
-                        foodDao.insertFood(
-                            Food(
-                                image = (if(foodImage!=null) foodImage.toString() else R.drawable.defaultfoodimg.toString()),
-                                name = foodName,
-                                portion = portionSize.toInt(),
-                                mealType = mealT,
-                                kcal = foodKcal.toDouble(),
-                                date = formattedDateTime
-                            )
-                        )
 
-                        if(foodImage!=null){
-                           saveFood(foodDao,
-                               foodDao.getLatestFoodId(),
-                               foodImage,
-                               foodDao.getUserProfile().deviceID)
-                        }
+                       saveFood(foodDao,
+                           foodImage,
+                           foodName,
+                           portionSize,
+                           mealT,
+                           foodKcal,
+                           formattedDateTime)
 
                         isLoading = true
                         coroutineScope.launch {
@@ -384,13 +407,23 @@ fun NewFoodAddedFloatingDialog() {
     )
 }
 
-private fun saveFood(foodDao: FoodDao,
-                     foodID: Int,
-                     foodImage: Bitmap?,
-                     deviceID: Int){
+private fun saveFood(
+    foodDao: FoodDao,
+    foodImage: Bitmap?,
+    foodName: String,
+    portionSize: String,
+    mealT: String,
+    foodKcal: String,
+    formattedDateTime: String
+){
+
+    val deviceID = foodDao.getUserProfile().deviceID
+    val foodID = foodDao.getLatestFoodId()
+
     val storageRef = FirebaseStorage.getInstance().getReference(deviceID.toString())
 
     val myRef = Firebase.database.getReference(deviceID.toString())
+
 
     if(foodImage != null){
         foodImage.let { bitmap ->
@@ -408,32 +441,32 @@ private fun saveFood(foodDao: FoodDao,
                             val imgUrl = uri.toString()
                             val foodData = mapOf("id" to foodID, "food_image" to imgUrl)
                             myRef.child(foodID.toString()).setValue(foodData)
-//                            foodDao.insertFood(
-//                                Food(
-//                                    image = imgUrl,
-//                                    name = foodName,
-//                                    portion = portionSize.toInt(),
-//                                    mealType = mealT,
-//                                    kcal = foodKcal.toInt(),
-//                                    date = formattedDateTime
-//                                )
-//                            )
+                            foodDao.insertFood(
+                                Food(
+                                    image = imgUrl,
+                                    name = foodName,
+                                    portion = portionSize.toInt(),
+                                    mealType = mealT,
+                                    kcal = foodKcal.toDouble(),
+                                    date = formattedDateTime
+                                )
+                            )
                         }
                 }
         }
     }
     else
     {
-//        foodDao.insertFood(
-//            Food(
-//                image = R.drawable.defaultfoodimg.toString(),
-//                name = foodName,
-//                portion = portionSize.toInt(),
-//                mealType = mealT,
-//                kcal = foodKcal.toInt(),
-//                date = formattedDateTime
-//            )
-//        )
+        foodDao.insertFood(
+            Food(
+                image = R.drawable.defaultfoodimg.toString(),
+                name = foodName,
+                portion = portionSize.toInt(),
+                mealType = mealT,
+                kcal = foodKcal.toDouble(),
+                date = formattedDateTime
+            )
+        )
     }
 
 }
