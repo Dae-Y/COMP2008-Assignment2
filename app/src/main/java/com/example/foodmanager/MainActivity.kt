@@ -1,6 +1,8 @@
 package com.example.foodmanager
 
+import android.content.ComponentCallbacks
 import android.content.Context
+import android.content.Intent
 import android.os.Build
 import android.os.Bundle
 import android.widget.Toast
@@ -8,7 +10,6 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.annotation.RequiresApi
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -30,15 +31,10 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.Divider
-import androidx.compose.material.LinearProgressIndicator
-import androidx.compose.material.ProgressIndicatorDefaults
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.ArrowDropDown
-import androidx.compose.material.icons.rounded.Home
 import androidx.compose.material.icons.rounded.KeyboardArrowUp
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -48,18 +44,14 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
@@ -74,13 +66,10 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
+import com.example.foodmanager.activities.MoreDetailActivity
 import com.example.foodmanager.ui.theme.FoodManagerTheme
 import com.google.firebase.Firebase
 import com.google.firebase.database.database
-import com.google.firebase.storage.storage
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
-import okhttp3.internal.wait
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import kotlin.random.Random
@@ -212,7 +201,7 @@ fun MainActivityHome(foodDao: FoodDao, context: Context) {
                         .clickable {
                             clickedStudent = foodItem.id
                         }){
-                        FoodCard(foodItem, foodDao)
+                        FoodCard(foodItem, foodDao, context)
                 }}
         }}
     }
@@ -245,7 +234,7 @@ fun CurvedTextWithElevation(text: String, onClick: () -> Unit) {
 }
 
 @Composable
-fun FoodCard(food: Food, foodDao: FoodDao) {
+fun FoodCard(food: Food, foodDao: FoodDao, context: Context) {
     val userProfileID = foodDao.getUserProfile().deviceID.toString()
     val foodID = food.id.toString()
 
@@ -265,7 +254,17 @@ fun FoodCard(food: Food, foodDao: FoodDao) {
         modifier = Modifier
             .padding(4.dp)
             .fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(4.dp)
+        elevation = CardDefaults.cardElevation(4.dp),
+        onClick = {
+            // Navigate to MoreDetailActivity with food details as extras
+            val intent = Intent(context, MoreDetailActivity::class.java).apply {
+                putExtra("foodName", food.name)
+                putExtra("foodImageUrl", image) // Pass the image URL (or empty string if null)
+                putExtra("mealType", food.mealType) // Pass the meal type
+                putExtra("date", food.date) // Pass the date
+            }
+            context.startActivity(intent)
+        }
     ) {
 
         Row(
@@ -387,30 +386,37 @@ fun initialLaunchCheck(foodDao: FoodDao)
 {
     if(!foodDao.hasProfile())
     {
-        val database = Firebase.database
-        var isUnique by remember { mutableStateOf(false) }
+        val database = Firebase
         var id by remember { mutableIntStateOf(Random.nextInt()) }
 
-        // get specific id by calling the id if not null run rand again
-//        while (!isUnique)
-//        {
-//            database.getReference(id.toString()).get().addOnFailureListener {
-//                isUnique = true
-//            }
-            id = Random.nextInt()
-//        }
+        generateUniqueID(database){ uniqueID ->
+            id = uniqueID
+        }
 
         foodDao.newUserProfile(UserProfile(
             deviceID = id,
             kcalDailyLimit = 0
         ))
 
-        val myRef = database.getReference(id.toString())
+        val myRef = database.database.getReference(id.toString())
         val foodID = 1
         val foodImage = "temp"
         val foodData = mapOf("id" to foodID, "food_image" to foodImage)
 
         // Add the foodID and pictureID
         myRef.child(foodID.toString()).setValue(foodData)
+    }
+}
+
+fun generateUniqueID(database: Firebase, callback: (Int) -> Unit){
+    val id = Random.nextInt()
+    database.database.getReference(id.toString()).get().addOnSuccessListener { snapshot ->
+        if (snapshot.exists()){
+            // If the ID already exists, it will try again
+            generateUniqueID(database, callback)
+        } else {
+            // ID is unique, return it
+            callback(id)
+        }
     }
 }

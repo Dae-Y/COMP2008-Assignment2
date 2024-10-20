@@ -28,6 +28,17 @@ import com.example.foodmanager.NavBar
 import com.example.foodmanager.R
 import com.example.foodmanager.ui.theme.FoodManagerTheme
 import android.content.Intent
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.painterResource
+import coil.compose.AsyncImage
+import com.google.firebase.Firebase
+import com.google.firebase.database.database
 
 class SummaryActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -47,6 +58,7 @@ fun SummaryActScreen() {
     val foodDao = db.foodDao()
     // Fetch food list from the database
     val foods = remember { foodDao.getAllFoods() }
+    val profileID = foodDao.getUserProfile().deviceID
 
     Column(
         modifier = Modifier
@@ -60,7 +72,7 @@ fun SummaryActScreen() {
                 .fillMaxWidth(),
             contentAlignment = Alignment.Center
         ) {
-            SummaryActivityContent(foods = foods) // pass the food list to the content
+            SummaryActivityContent(foods = foods, profileID = profileID) // pass the food list to the content
         }
 
         // Navigation bar with fixed height
@@ -77,26 +89,31 @@ fun SummaryActScreen() {
 }
 
 @Composable
-fun SummaryActivityContent(foods: List<Food>) {
+fun SummaryActivityContent(foods: List<Food>, profileID: Int) {
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
             .padding(8.dp) // Padding around the LazyColumn
     ) {
         items(foods) { food ->
-            SingleFoodCard(food = food) // Call the Card Composable for each item
+            SingleFoodCard(food = food, profileID = profileID) // Call the Card Composable for each item
         }
     }
 }
 
 @Composable
-fun SingleFoodCard(food: Food) {
+fun SingleFoodCard(food: Food, profileID: Int) {
     val context = LocalContext.current
-    val bitmap = if (food.image != null) {
-        BitmapFactory.decodeFile(food.image) // Decode image from the file path
-    } else { // Use default image when food.image is null
-        BitmapFactory.decodeResource(context.resources, R.drawable.empty_plate)
-    } // empty plate reproduced from https://freepng.pictures/download/plate-17/
+    val foodRef = Firebase.database.getReference(profileID.toString()).child(food.id.toString())
+    var image by remember { mutableStateOf(R.drawable.defaultfoodimg.toString()) }
+    var isLoading by remember { mutableStateOf(false) }
+
+    foodRef.get().addOnSuccessListener { snapshot ->
+        if (snapshot.exists()) {
+            val foodData = snapshot.value as Map<String, Any>
+            image = foodData["food_image"] as String
+        }
+    }
 
     Card(
         modifier = Modifier
@@ -107,7 +124,7 @@ fun SingleFoodCard(food: Food) {
             // Navigate to MoreDetailActivity with food details as extras
             val intent = Intent(context, MoreDetailActivity::class.java).apply {
                 putExtra("foodName", food.name)
-                putExtra("foodImageUrl", food.image ?: "") // Pass the image URL (or empty string if null)
+                putExtra("foodImageUrl", image) // Pass the image URL (or empty string if null)
                 putExtra("mealType", food.mealType) // Pass the meal type
                 putExtra("date", food.date) // Pass the date
             }
@@ -122,14 +139,28 @@ fun SingleFoodCard(food: Food) {
                 .size(100.dp)
                 .padding(8.dp) // Size and padding for the image box
         ) {
-            bitmap?.let {
-                Image(
-                    bitmap = it.asImageBitmap(),
-                    contentDescription = "Food Image",
+            Box(modifier = Modifier.align(Alignment.Center),
+                contentAlignment=Alignment.Center){
+                AsyncImage(
+                    model = image,
+                    error = painterResource(R.drawable.defaultfoodimg),
+                    contentScale = ContentScale.Fit,
+                    contentDescription = "Contact Picture",
                     modifier = Modifier
-                        .fillMaxSize(), // Ensure the image fills the box
-                    contentScale = ContentScale.Fit // Fit the image to show fully without cropping
+                        .size(100.dp)
+                        .clip(CircleShape),
+                    onLoading = {isLoading=true},
+                    onSuccess = {isLoading=false},
+                    onError = { error ->
+                        isLoading = false
+                    }
                 )
+                if (isLoading) {
+                    CircularProgressIndicator(
+                        color = MaterialTheme.colorScheme.secondary,
+                        trackColor = MaterialTheme.colorScheme.surfaceVariant
+                    )
+                }
             }
         }
         Column(
@@ -181,7 +212,7 @@ fun SummaryActScreenPreview() {
                     .fillMaxWidth(),
                 contentAlignment = Alignment.Center
             ) {
-                SummaryActivityContent(foods = sampleFoods) // Pass the sample food list
+                SummaryActivityContent(foods = sampleFoods, profileID = 123) // Pass the sample food list
             }
 
             // Navigation bar with fixed height

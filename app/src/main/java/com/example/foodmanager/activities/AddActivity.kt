@@ -1,22 +1,17 @@
 package com.example.foodmanager.activities
 
-import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
-import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.annotation.RequiresApi
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
@@ -26,9 +21,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBars
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -41,9 +34,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.TextField
-import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -54,13 +44,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextDecoration
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.foodmanager.DatabaseProvider
 import com.example.foodmanager.Food
@@ -70,11 +56,8 @@ import com.example.foodmanager.NavBar
 import com.example.foodmanager.R
 import com.example.foodmanager.ui.theme.FoodManagerTheme
 import com.google.firebase.Firebase
-import com.google.firebase.database.DatabaseReference
 import com.google.firebase.database.database
 import com.google.firebase.storage.FirebaseStorage
-import com.google.firebase.storage.StorageReference
-import com.google.firebase.storage.storage
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.io.File
@@ -267,7 +250,7 @@ fun AddActivityContent(foodDao: FoodDao) {
                     if(!hasEmpty) {
                         foodDao.insertFood(
                             Food(
-                                image = R.drawable.defaultfoodimg.toString(),
+                                image = (if(foodImage!=null) foodImage.toString() else R.drawable.defaultfoodimg.toString()),
                                 name = foodName,
                                 portion = portionSize.toInt(),
                                 mealType = mealT,
@@ -277,13 +260,12 @@ fun AddActivityContent(foodDao: FoodDao) {
                         )
 
                         if(foodImage!=null){
-                            saveFood(foodDao.getLatestFoodId(), foodImage, foodDao.getUserProfile().deviceID)
+                           saveFood(foodDao.getLatestFoodId(), foodImage, foodDao.getUserProfile().deviceID)
                         }
 
-//                        Toast.makeText(context, "Food added!", Toast.LENGTH_SHORT).show()
                         isLoading = true
                         coroutineScope.launch {
-                            delay(4000L) // Wait for 3 seconds
+                            delay(4500L) // Wait for 4 seconds
                             isLoading = false
                             val intent = Intent(context, MainActivity::class.java)
                             context.startActivity(intent)
@@ -390,7 +372,7 @@ fun NewFoodAddedFloatingDialog() {
     )
 }
 
-private fun saveFood(foodID: Int, foodImage: Bitmap?, deviceID: Int) {
+private fun saveFood(foodID: Int, foodImage: Bitmap?, deviceID: Int){
     val storageRef = FirebaseStorage.getInstance().getReference(deviceID.toString())
 
     val myRef = Firebase.database.getReference(deviceID.toString())
