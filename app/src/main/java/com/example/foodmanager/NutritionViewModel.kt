@@ -29,11 +29,9 @@ class NutritionViewModel : ViewModel() {
             try {
                 val requestBody = mapOf("query" to foodName)
                 val response = withContext(Dispatchers.IO) {
-                    apiService.getNutritionData(
-                        "1c5d6448",
-                        "bba5ac8e124b7074ba9a81f66b500f2a",
-                        requestBody
-                    )
+
+                    apiService.getNutritionData("aaee087b",
+                        "aa58793d24f5662a188b4ba5d672e39e", requestBody)
                 }
                 _nutritionData.value = response.foods.firstOrNull()
                 _errorMessage.value = null
