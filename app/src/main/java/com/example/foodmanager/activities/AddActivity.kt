@@ -49,6 +49,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableDoubleStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -199,7 +200,7 @@ fun AddActivityContent(foodDao: FoodDao, viewModel: NutritionViewModel) {
                             else
                             {
                                 Toast.makeText(context,
-                                    "API did not found food ${foodName}!,\nPlease enter nutrients manually",
+                                    "API fail to find food ${foodName}!,\nManual input require later",
                                     Toast.LENGTH_LONG)
                                     .show()
                             }
@@ -518,18 +519,20 @@ fun UpdateDailyKcalDialog(
     foodDao: FoodDao,
     context: Context
 ) {
-    var updatedDailyKcal by remember { mutableStateOf("") }
-//    @ColumnInfo(name = "serving_weight") val servingWeight: Double,
-//    @ColumnInfo(name = "calories") val calories: Double,
-//    @ColumnInfo(name = "total_fat") val totalFat: Double,
-//    @ColumnInfo(name = "sat_fat") val saturatedFat: Double,
-//    @ColumnInfo(name = "cholesterol") val cholesterol: Double,
-//    @ColumnInfo(name = "sodium") val sodium: Double,
-//    @ColumnInfo(name = "carbohydrate") val carbohydrate: Double,
-//    @ColumnInfo(name = "sugars") val sugars: Double,
-//    @ColumnInfo(name = "protein") val protein: Double,
-//    @ColumnInfo(name = "potassium") val potassium: Double,
-//    @ColumnInfo(name = "phosphorus") val phosphorus: Double
+    var servingWeight by remember { mutableDoubleStateOf(0.0) }
+    var calories by remember { mutableDoubleStateOf(0.0) }
+    var totalFat by remember { mutableDoubleStateOf(0.0) }
+
+    var satFat by remember { mutableDoubleStateOf(0.0) }
+    var cholesterol by remember { mutableDoubleStateOf(0.0) }
+    var sodium by remember { mutableDoubleStateOf(0.0) }
+
+    var carbohydrate by remember { mutableDoubleStateOf(0.0) }
+    var sugars by remember { mutableDoubleStateOf(0.0) }
+    var protein by remember { mutableDoubleStateOf(0.0) }
+
+    var potassium by remember { mutableDoubleStateOf(0.0) }
+    var phosphorus by remember { mutableDoubleStateOf(0.0) }
 
     if (showDialog) {
         AlertDialog(
@@ -543,68 +546,68 @@ fun UpdateDailyKcalDialog(
                     horizontalAlignment = Alignment.Start
                 ){
                     item { NutTextField(
-                        value = updatedDailyKcal,
-                        onValueChange = { newValue -> updatedDailyKcal = newValue },
+                        value = servingWeight.toString(),
+                        onValueChange = { newValue -> servingWeight = newValue },
                         label = "serving weight",
                         context = context
                     )  }
                     item { NutTextField(
-                        value = updatedDailyKcal,
-                        onValueChange = { newValue -> updatedDailyKcal = newValue },
+                        value = calories.toString(),
+                        onValueChange = { newValue -> calories = newValue },
                         label = "calories",
                         context = context
                     )  }
                     item { NutTextField(
-                        value = updatedDailyKcal,
-                        onValueChange = { newValue -> updatedDailyKcal = newValue },
+                        value = totalFat.toString(),
+                        onValueChange = { newValue -> totalFat = newValue },
                         label = "fat",
                         context = context
                     )  }
                     item { NutTextField(
-                        value = updatedDailyKcal,
-                        onValueChange = { newValue -> updatedDailyKcal = newValue },
+                        value = satFat.toString(),
+                        onValueChange = { newValue -> satFat = newValue },
                         label = "saturated fat",
                         context = context
                     )  }
                     item { NutTextField(
-                        value = updatedDailyKcal,
-                        onValueChange = { newValue -> updatedDailyKcal = newValue },
+                        value = cholesterol.toString(),
+                        onValueChange = { newValue -> cholesterol = newValue },
                         label = "cholesterol",
                         context = context
                     )  }
                     item { NutTextField(
-                        value = updatedDailyKcal,
-                        onValueChange = { newValue -> updatedDailyKcal = newValue },
+                        value = sodium.toString(),
+                        onValueChange = { newValue -> sodium = newValue },
                         label = "sodium",
                         context = context
                     )  }
                     item { NutTextField(
-                        value = updatedDailyKcal,
-                        onValueChange = { newValue -> updatedDailyKcal = newValue },
+                        value = carbohydrate.toString(),
+                        onValueChange = { newValue -> carbohydrate = newValue },
                         label = "carbohydrate",
                         context = context
                     )  }
                     item { NutTextField(
-                        value = updatedDailyKcal,
-                        onValueChange = { newValue -> updatedDailyKcal = newValue },
+                        value = sugars.toString(),
+                        onValueChange = { newValue -> sugars = newValue },
                         label = "sugars",
                         context = context
                     )  }
                     item { NutTextField(
-                        value = updatedDailyKcal,
-                        onValueChange = { newValue -> updatedDailyKcal = newValue },
+                        value = protein.toString(),
+                        onValueChange = { newValue -> protein = newValue },
                         label = "protein",
                         context = context
                     )  }
                     item { NutTextField(
-                        value = updatedDailyKcal,
-                        onValueChange = { newValue -> updatedDailyKcal = newValue },
+                        value = potassium.toString(),
+                        onValueChange = { newValue -> potassium = newValue },
                         label = "potassium",
                         context = context
                     )  }
                     item { NutTextField(
-                        value = updatedDailyKcal,
-                        onValueChange = { newValue -> updatedDailyKcal = newValue },
+                        value = phosphorus.toString(),
+                        onValueChange = { newValue -> phosphorus = newValue },
                         label = "phosphorus",
                         context = context
                     )  }
@@ -620,11 +623,6 @@ fun UpdateDailyKcalDialog(
                 }) {
                     Text("Update")
                 }
-            },
-            dismissButton = {
-                TextButton(onClick = { setShowDialog(false) }) {
-                    Text("Cancel")
-                }
             }
         )
     }
@@ -633,7 +631,7 @@ fun UpdateDailyKcalDialog(
 @Composable
 fun NutTextField(
     value: String,
-    onValueChange: (String) -> Unit,
+    onValueChange: (Double) -> Unit,
     label: String,
     context: Context
 ) {
@@ -641,7 +639,7 @@ fun NutTextField(
         value = value,
         onValueChange = { newValue ->
             if (validateInputDouble(newValue, context)) {
-                onValueChange(newValue)
+                onValueChange(newValue.toDouble())
             }
         },
         label = { Text(label) },
