@@ -1,51 +1,64 @@
 package com.example.foodmanager.activities
 
+import android.content.Context
 import android.content.Intent
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.layout.*
+import androidx.activity.viewModels
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
+import coil.compose.AsyncImage
+import com.example.foodmanager.DatabaseProvider
+import com.example.foodmanager.FoodDao
 import com.example.foodmanager.MainActivity
 import com.example.foodmanager.NavBar
-import com.example.foodmanager.ui.theme.FoodManagerTheme
-import androidx.activity.viewModels
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Card
-import androidx.compose.runtime.*
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.style.TextDecoration
-import androidx.compose.ui.tooling.preview.Preview
-import coil.compose.AsyncImage
 import com.example.foodmanager.NutritionViewModel
 import com.example.foodmanager.R
+import com.example.foodmanager.ui.theme.FoodManagerTheme
 
 class MoreDetailActivity : ComponentActivity() {
     private val viewModel: NutritionViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        val foodIMG = intent.getStringExtra("foodIMG")
+        val foodID = intent.getStringExtra("foodID")
+        val foodIMG = intent.getStringExtra("foodImageUrl")
         val foodName = intent.getStringExtra("foodName")
         val portionSize = intent.getIntExtra("portionSize", 1) // Default to 1 if not provided
+        val db = DatabaseProvider.getDatabase(this)
 
         setContent {
             FoodManagerTheme {
@@ -59,7 +72,13 @@ class MoreDetailActivity : ComponentActivity() {
                             .fillMaxWidth()
                             .weight(1f)
                     ) {
-                        MoreDetailScreen(foodIMG ?: "", foodName ?: "", portionSize, viewModel)
+                        MoreDetailScreen(db.foodDao(),
+                            foodID ?:"",
+                            foodIMG ?: "",
+                            foodName ?: "",
+                            portionSize,
+                            viewModel,
+                            context)
                     }
                     Box(
                         modifier = Modifier
@@ -87,11 +106,12 @@ class MoreDetailActivity : ComponentActivity() {
 }
 
 @Composable
-fun MoreDetailScreen(foodIMG: String, foodName: String, portionSize: Int, viewModel: NutritionViewModel) {
+fun MoreDetailScreen(foodDao: FoodDao, foodID: String, foodIMG: String, foodName: String, portionSize: Int, viewModel: NutritionViewModel, context: Context) {
     val nutritionData by viewModel.nutritionData.collectAsState()
     val loading by viewModel.loading.collectAsState()
     val errorMessage by viewModel.errorMessage.collectAsState()
     var isLoading by remember { mutableStateOf(false) }
+
 
     Column(
         modifier = Modifier
@@ -113,7 +133,72 @@ fun MoreDetailScreen(foodIMG: String, foodName: String, portionSize: Int, viewMo
 
                 errorMessage?.let {
                     if (it.isNotEmpty()) {
-                        Text(text = it, color = Color.Red)
+                        val nutData = foodDao.getNutByFoodId(foodID.toInt())
+
+                        if (nutData != null) {
+                            // Display the food name and calculated values
+                            Text(
+                                text = "Food: $foodName",
+                                fontWeight = FontWeight.Bold,
+                                style = MaterialTheme.typography.titleLarge,
+                                modifier = Modifier.padding(bottom = 8.dp),
+                                textDecoration = TextDecoration.Underline
+                            )
+
+                            Box(modifier = Modifier.align(Alignment.CenterHorizontally),
+                                contentAlignment=Alignment.Center){
+                                AsyncImage(
+                                    model = foodIMG,
+                                    error = painterResource(R.drawable.defaultfoodimg),
+                                    contentScale = ContentScale.Fit,
+                                    contentDescription = "Contact Picture",
+                                    modifier = Modifier
+                                        .size(100.dp)
+                                        .clip(CircleShape),
+                                    onLoading = {isLoading=true},
+                                    onSuccess = {isLoading=false},
+                                    onError = { error ->
+                                        isLoading = false
+                                    }
+                                )
+                                if (isLoading) {
+                                    CircularProgressIndicator(
+                                        color = MaterialTheme.colorScheme.secondary,
+                                        trackColor = MaterialTheme.colorScheme.surfaceVariant
+                                    )
+                                }
+                            }
+
+
+                            Text(text = "Serving Size: ${nutData.servingQty} ${nutData.servingUnit}")
+                            Text(text = "Weight: ${nutData.servingWeight} grams")
+
+                            Spacer(modifier = Modifier.height(16.dp))
+
+                            // Nutrition facts section
+                            Card(modifier = Modifier.fillMaxWidth()) {
+                                Column(modifier = Modifier.padding(16.dp)) {
+                                    Text(
+                                        text = "Nutrition Facts",
+                                        fontWeight = FontWeight.Bold,
+                                        style = MaterialTheme.typography.titleMedium,
+                                        modifier = Modifier.padding(bottom = 8.dp)
+                                    )
+
+                                    NutritionRow(label = "Calories", value = String.format("%.3f", nutData.calories) + " kcal")
+                                    NutritionRow(label = "Total Fat", value = String.format("%.3f", nutData.totalFat) + " g")
+                                    NutritionRow(label = "Saturated Fat", value = String.format("%.3f", nutData.saturatedFat) + " g")
+                                    NutritionRow(label = "Cholesterol", value = String.format("%.3f", nutData.cholesterol) + " mg")
+                                    NutritionRow(label = "Sodium", value = String.format("%.3f", nutData.sodium) + " mg")
+                                    NutritionRow(label = "Carbohydrates", value = String.format("%.3f", nutData.carbohydrate) + " g")
+                                    NutritionRow(label = "Dietary Fiber", value = String.format("%.3f", nutData.fiber) + " g")
+                                    NutritionRow(label = "Sugars", value = String.format("%.3f", nutData.sugars) + " g")
+                                    NutritionRow(label = "Protein", value = String.format("%.3f", nutData.protein) + " g")
+                                    NutritionRow(label = "Potassium", value = String.format("%.3f", nutData.potassium) + " mg")
+                                    NutritionRow(label = "Phosphorus", value = String.format("%.3f", nutData.phosphorus) + " mg")
+                                }
+                            }
+                        }
                     }
                 }
                 nutritionData?.let { data ->
@@ -196,8 +281,18 @@ fun MoreDetailScreen(foodIMG: String, foodName: String, portionSize: Int, viewMo
                         }
                     }
                 }
+                Button(onClick = {
+                    foodDao.deleteFoodsId(foodID.toInt())
+                    Toast.makeText(context, "Food deleted", Toast.LENGTH_LONG).show()
+
+                    val intent = Intent(context, MainActivity::class.java)
+                    context.startActivity(intent)
+                }) {
+                    Text("Delete")
+                }
             }
         }
+
     }
 }
 
