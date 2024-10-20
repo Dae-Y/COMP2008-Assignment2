@@ -319,7 +319,7 @@ fun AddActivityContent(foodDao: FoodDao, viewModel: NutritionViewModel) {
                 }
                 if(!isAPIgetFood) {
                     Text(
-                        text = "*Manual nutrients input required",
+                        text = "*Manual nutrients input will be prompt after add food",
                         color = Color.Red,
                         style = MaterialTheme.typography.bodyMedium,
                         modifier = Modifier.padding(start = 16.dp)
