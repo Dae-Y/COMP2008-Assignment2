@@ -4,6 +4,7 @@ import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -19,12 +20,16 @@ import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.OutlinedTextField
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -34,14 +39,19 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.example.foodmanager.DatabaseProvider
 import com.example.foodmanager.Food
+import com.example.foodmanager.FoodDao
 import com.example.foodmanager.NavBar
 import com.example.foodmanager.R
 import com.example.foodmanager.ui.theme.FoodManagerTheme
+import java.text.ParseException
+import java.text.SimpleDateFormat
+import java.util.Locale
 
 class SummaryActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -63,6 +73,7 @@ fun SummaryActScreen() {
     val foods = remember { foodDao.getAllFoods() }
     val profileID = foodDao.getUserProfile().deviceID
 
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -75,7 +86,7 @@ fun SummaryActScreen() {
                 .fillMaxWidth(),
             contentAlignment = Alignment.Center
         ) {
-            SummaryActivityContent(foods = foods, profileID = profileID) // pass the food list to the content
+            SummaryActivityContent(foodDao = foodDao, profileID = profileID) // pass the food list to the content
         }
 
         // Navigation bar with fixed height
@@ -92,12 +103,36 @@ fun SummaryActScreen() {
 }
 
 @Composable
-fun SummaryActivityContent(foods: List<Food>, profileID: Int) {
+fun SummaryActivityContent(foodDao: FoodDao, profileID: Int) {
+    var yearMonthDate by remember { mutableStateOf("") }
+    var foods by remember { mutableStateOf(foodDao.getAllFoods()) }
+
+    if(isValidDateFormat(yearMonthDate)){
+        foods = foodDao.getFoodsByDate(yearMonthDate)
+    }else{
+        foods = foodDao.getAllFoods()
+    }
+
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
             .padding(8.dp) // Padding around the LazyColumn
     ) {
+        item { Row (modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceEvenly){
+            OutlinedTextField(
+                value = yearMonthDate,  // Convert Int to String
+                onValueChange = { newValue ->
+                    yearMonthDate = newValue
+                },
+                label = { Text("Search by date (yyyy-mm-dd)") },
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number) // Use numeric keyboard
+            )
+        } }
         items(foods) { food ->
             SingleFoodCard(food = food, profileID = profileID) // Call the Card Composable for each item
         }
@@ -210,7 +245,7 @@ fun SummaryActScreenPreview() {
                     .fillMaxWidth(),
                 contentAlignment = Alignment.Center
             ) {
-                SummaryActivityContent(foods = sampleFoods, profileID = 123) // Pass the sample food list
+//                SummaryActivityContent(foods = sampleFoods, profileID = 123) // Pass the sample food list
             }
 
             // Navigation bar with fixed height
@@ -222,5 +257,17 @@ fun SummaryActScreenPreview() {
                 NavBar(context = LocalContext.current) // Use current context for NavBar
             }
         }
+    }
+}
+
+fun isValidDateFormat(dateString: String): Boolean {
+    val format = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+    format.isLenient = false // Disable lenient parsing for strict format checking
+
+    try {
+        format.parse(dateString)
+        return true // If parsing succeeds, the format is valid
+    } catch (e: ParseException) {
+        return false // If parsing fails, the format is invalid
     }
 }
