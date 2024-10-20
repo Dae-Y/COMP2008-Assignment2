@@ -55,6 +55,7 @@ data class Nutrition(
     @ColumnInfo(name = "cholesterol") val cholesterol: Double,
     @ColumnInfo(name = "sodium") val sodium: Double,
     @ColumnInfo(name = "carbohydrate") val carbohydrate: Double,
+    @ColumnInfo(name = "fiber") val fiber: Double,
     @ColumnInfo(name = "sugars") val sugars: Double,
     @ColumnInfo(name = "protein") val protein: Double,
     @ColumnInfo(name = "potassium") val potassium: Double,
@@ -74,8 +75,11 @@ data class UserProfile(
 interface FoodDao {
 
     // ======================== When API fails, open up nutrition manually ===================================== //
-    // @Insert
-    // fun insertNutrition(nutrition: Nutrition)
+     @Insert
+     fun insertNutrition(nutrition: Nutrition)
+
+    @Query("SELECT * FROM nutrition WHERE food_id = :id") // Get nutrition food by food ID
+    fun getNutByFoodId(id: Int): Nutrition?
 
     // ======================================= Query For dailyKcal Table ======================================= //
     @Update
@@ -111,6 +115,9 @@ interface FoodDao {
 
     @Query("DELETE FROM foods WHERE date = :date") // Delete foods by date
     fun deleteFoodsByDate(date: String)
+
+    @Query("DELETE FROM foods WHERE id = :id") // Delete foods by id
+    fun deleteFoodsId(id: Int)
 
     @Query("SELECT * FROM foods ORDER BY date DESC") // Get foods ordered by date
     fun getFoodsOrderedByDate(): List<Food>

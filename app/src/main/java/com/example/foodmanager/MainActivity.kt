@@ -236,20 +236,8 @@ fun CurvedTextWithElevation(text: String, onClick: () -> Unit) {
 
 @Composable
 fun FoodCard(food: Food, foodDao: FoodDao, context: Context) {
-    val userProfileID = foodDao.getUserProfile().deviceID.toString()
-    val foodID = food.id.toString()
 
-    val foodRef = Firebase.database.getReference(userProfileID).child(foodID)
-
-    var image by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(false) }
-
-    foodRef.get().addOnSuccessListener { snapshot ->
-        if (snapshot.exists()) {
-            val foodData = snapshot.value as Map<String, Any>
-            image = foodData["food_image"] as String
-        }
-    }
 
     Card(
         modifier = Modifier
@@ -259,8 +247,9 @@ fun FoodCard(food: Food, foodDao: FoodDao, context: Context) {
         onClick = {
             // Navigate to MoreDetailActivity with food details as extras
             val intent = Intent(context, MoreDetailActivity::class.java).apply {
+                putExtra("foodIMG", food.image)
                 putExtra("foodName", food.name)
-                putExtra("foodImageUrl", image) // Pass the image URL (or empty string if null)
+                putExtra("foodImageUrl", food.image) // Pass the image URL (or empty string if null)
                 putExtra("mealType", food.mealType) // Pass the meal type
                 putExtra("date", food.date) // Pass the date
             }
@@ -277,7 +266,7 @@ fun FoodCard(food: Food, foodDao: FoodDao, context: Context) {
             Box(modifier = Modifier.align(Alignment.CenterVertically),
                 contentAlignment=Alignment.Center){
                 AsyncImage(
-                    model = image,
+                    model = food.image,
                     error = painterResource(R.drawable.defaultfoodimg),
                     contentScale = ContentScale.Fit,
                     contentDescription = "Contact Picture",
