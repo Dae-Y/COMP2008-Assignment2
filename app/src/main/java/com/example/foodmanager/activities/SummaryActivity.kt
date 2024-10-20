@@ -120,6 +120,8 @@ fun SingleFoodCard(food: Food, profileID: Int) {
             val intent = Intent(context, MoreDetailActivity::class.java).apply {
                 putExtra("foodID", food.id.toString())
                 putExtra("foodName", food.name)
+                putExtra("portionSize", food.portion)
+                putExtra("servingQty", food.portion)
                 putExtra("foodImageUrl", food.image) // Pass the image URL (or empty string if null)
                 putExtra("mealType", food.mealType) // Pass the meal type
                 putExtra("date", food.date) // Pass the date

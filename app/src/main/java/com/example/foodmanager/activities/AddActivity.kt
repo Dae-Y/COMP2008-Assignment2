@@ -551,7 +551,7 @@ fun UpdateDailyKcalDialog(
     var servingQty by remember { mutableIntStateOf(0) }
 
     var servingWeight by remember { mutableDoubleStateOf(0.0) }
-    var servingUnit by remember { mutableStateOf("grams") }
+    var servingUnit by remember { mutableStateOf("qty") }
     var calories by remember { mutableDoubleStateOf(0.0) }
 
     var totalFat by remember { mutableDoubleStateOf(0.0) }
@@ -583,7 +583,7 @@ fun UpdateDailyKcalDialog(
                     item { NutTextField(
                         value = servingQty.toString(),
                         onValueChange = { newValue -> servingQty = newValue.toInt() },
-                        label = "calories",
+                        label = "serving Quantity",
                         context = context
                     )  }
                     item { NutTextField(

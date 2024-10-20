@@ -57,6 +57,7 @@ class MoreDetailActivity : ComponentActivity() {
         val foodID = intent.getStringExtra("foodID")
         val foodIMG = intent.getStringExtra("foodImageUrl")
         val foodName = intent.getStringExtra("foodName")
+        val servQty = intent.getIntExtra("portionSize", 1)
         val portionSize = intent.getIntExtra("portionSize", 1) // Default to 1 if not provided
         val db = DatabaseProvider.getDatabase(this)
 
@@ -78,7 +79,8 @@ class MoreDetailActivity : ComponentActivity() {
                             foodName ?: "",
                             portionSize,
                             viewModel,
-                            context)
+                            context,
+                            servQty)
                     }
                     Box(
                         modifier = Modifier
@@ -106,7 +108,14 @@ class MoreDetailActivity : ComponentActivity() {
 }
 
 @Composable
-fun MoreDetailScreen(foodDao: FoodDao, foodID: String, foodIMG: String, foodName: String, portionSize: Int, viewModel: NutritionViewModel, context: Context) {
+fun MoreDetailScreen(foodDao: FoodDao,
+                     foodID: String,
+                     foodIMG: String,
+                     foodName: String,
+                     portionSize: Int,
+                     viewModel: NutritionViewModel,
+                     context: Context,
+                     servQty: Int) {
     val nutritionData by viewModel.nutritionData.collectAsState()
     val loading by viewModel.loading.collectAsState()
     val errorMessage by viewModel.errorMessage.collectAsState()
@@ -170,7 +179,7 @@ fun MoreDetailScreen(foodDao: FoodDao, foodID: String, foodIMG: String, foodName
                             }
 
 
-                            Text(text = "Serving Size: ${nutData.servingQty} ${nutData.servingUnit}")
+                            Text(text = "Serving Quantity: ${servQty} ${nutData.servingUnit}")
                             Text(text = "Weight: ${nutData.servingWeight} grams")
 
                             Spacer(modifier = Modifier.height(16.dp))
@@ -185,17 +194,17 @@ fun MoreDetailScreen(foodDao: FoodDao, foodID: String, foodIMG: String, foodName
                                         modifier = Modifier.padding(bottom = 8.dp)
                                     )
 
-                                    NutritionRow(label = "Calories", value = String.format("%.3f", nutData.calories) + " kcal")
-                                    NutritionRow(label = "Total Fat", value = String.format("%.3f", nutData.totalFat) + " g")
-                                    NutritionRow(label = "Saturated Fat", value = String.format("%.3f", nutData.saturatedFat) + " g")
-                                    NutritionRow(label = "Cholesterol", value = String.format("%.3f", nutData.cholesterol) + " mg")
-                                    NutritionRow(label = "Sodium", value = String.format("%.3f", nutData.sodium) + " mg")
-                                    NutritionRow(label = "Carbohydrates", value = String.format("%.3f", nutData.carbohydrate) + " g")
-                                    NutritionRow(label = "Dietary Fiber", value = String.format("%.3f", nutData.fiber) + " g")
-                                    NutritionRow(label = "Sugars", value = String.format("%.3f", nutData.sugars) + " g")
-                                    NutritionRow(label = "Protein", value = String.format("%.3f", nutData.protein) + " g")
-                                    NutritionRow(label = "Potassium", value = String.format("%.3f", nutData.potassium) + " mg")
-                                    NutritionRow(label = "Phosphorus", value = String.format("%.3f", nutData.phosphorus) + " mg")
+                                    NutritionRow(label = "Calories", value = String.format("%.3f", nutData.calories * portionSize) + " kcal")
+                                    NutritionRow(label = "Total Fat", value = String.format("%.3f", nutData.totalFat * portionSize) + " g")
+                                    NutritionRow(label = "Saturated Fat", value = String.format("%.3f", nutData.saturatedFat * portionSize) + " g")
+                                    NutritionRow(label = "Cholesterol", value = String.format("%.3f", nutData.cholesterol * portionSize) + " mg")
+                                    NutritionRow(label = "Sodium", value = String.format("%.3f", nutData.sodium * portionSize) + " mg")
+                                    NutritionRow(label = "Carbohydrates", value = String.format("%.3f", nutData.carbohydrate * portionSize) + " g")
+                                    NutritionRow(label = "Dietary Fiber", value = String.format("%.3f", nutData.fiber * portionSize) + " g")
+                                    NutritionRow(label = "Sugars", value = String.format("%.3f", nutData.sugars * portionSize) + " g")
+                                    NutritionRow(label = "Protein", value = String.format("%.3f", nutData.protein * portionSize) + " g")
+                                    NutritionRow(label = "Potassium", value = String.format("%.3f", nutData.potassium * portionSize) + " mg")
+                                    NutritionRow(label = "Phosphorus", value = String.format("%.3f", nutData.phosphorus * portionSize) + " mg")
                                 }
                             }
                         }
