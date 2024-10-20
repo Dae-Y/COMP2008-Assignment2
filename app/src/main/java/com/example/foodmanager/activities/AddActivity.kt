@@ -8,6 +8,7 @@ import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.viewModels
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -35,6 +36,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -53,6 +55,7 @@ import com.example.foodmanager.Food
 import com.example.foodmanager.FoodDao
 import com.example.foodmanager.MainActivity
 import com.example.foodmanager.NavBar
+import com.example.foodmanager.NutritionViewModel
 import com.example.foodmanager.R
 import com.example.foodmanager.ui.theme.FoodManagerTheme
 import com.google.firebase.Firebase
@@ -66,6 +69,7 @@ import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
 class AddActivity : ComponentActivity() {
+    private val viewModel: NutritionViewModel by viewModels()
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -85,7 +89,7 @@ class AddActivity : ComponentActivity() {
                             .fillMaxWidth(),
                         contentAlignment = Alignment.Center
                     ) {
-                        AddActivityContent(foodDao = db.foodDao())
+                        AddActivityContent(foodDao = db.foodDao(), viewModel)
                     }
 
                     // Navigation bar with fixed height
@@ -104,7 +108,7 @@ class AddActivity : ComponentActivity() {
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun AddActivityContent(foodDao: FoodDao) {
+fun AddActivityContent(foodDao: FoodDao, viewModel: NutritionViewModel) {
     val context = LocalContext.current
 
     var foodImage by remember { mutableStateOf<Bitmap?>(null) }
@@ -155,7 +159,13 @@ fun AddActivityContent(foodDao: FoodDao) {
             item { OutlinedTextField(
                     value = foodName,
                     onValueChange = { foodName = it
-                                    isNameEmpty = false},
+                                    isNameEmpty = false
+                                    viewModel.fetchNutritionData(foodName)
+
+                                    viewModel.nutritionData.value?.let { nutritionData ->
+                                        foodKcal = nutritionData.nf_calories.toString()
+                                    }
+                    },
                     label = { Text("Food Name") },
                     modifier = Modifier.fillMaxWidth(),
                     textStyle = TextStyle(Color.Black),
