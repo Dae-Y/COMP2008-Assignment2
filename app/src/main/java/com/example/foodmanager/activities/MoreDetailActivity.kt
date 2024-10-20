@@ -142,17 +142,17 @@ fun MoreDetailScreen(foodName: String, portionSize: Int, viewModel: NutritionVie
                         modifier = Modifier.padding(bottom = 8.dp)
                     )
 
-                    NutritionRow(label = "Calories", value = "$calories kcal")
-                    NutritionRow(label = "Total Fat", value = "$totalFat g")
-                    NutritionRow(label = "Saturated Fat", value = "$saturatedFat g")
-                    NutritionRow(label = "Cholesterol", value = "$cholesterol mg")
-                    NutritionRow(label = "Sodium", value = "$sodium mg")
-                    NutritionRow(label = "Carbohydrates", value = "$carbohydrate g")
-                    NutritionRow(label = "Dietary Fiber", value = "$dietaryFiber g")
-                    NutritionRow(label = "Sugars", value = "$sugars g")
-                    NutritionRow(label = "Protein", value = "$protein g")
-                    NutritionRow(label = "Potassium", value = "$potassium mg")
-                    NutritionRow(label = "Phosphorus", value = "$phosphorus mg")
+                    NutritionRow(label = "Calories", value = String.format("%.3f", calories) + " kcal")
+                    NutritionRow(label = "Total Fat", value = String.format("%.3f", totalFat) + " g")
+                    NutritionRow(label = "Saturated Fat", value = String.format("%.3f", saturatedFat) + " g")
+                    NutritionRow(label = "Cholesterol", value = String.format("%.3f", cholesterol) + " mg")
+                    NutritionRow(label = "Sodium", value = String.format("%.3f", sodium) + " mg")
+                    NutritionRow(label = "Carbohydrates", value = String.format("%.3f", carbohydrate) + " g")
+                    NutritionRow(label = "Dietary Fiber", value = String.format("%.3f", dietaryFiber) + " g")
+                    NutritionRow(label = "Sugars", value = String.format("%.3f", sugars) + " g")
+                    NutritionRow(label = "Protein", value = String.format("%.3f", protein) + " g")
+                    NutritionRow(label = "Potassium", value = String.format("%.3f", potassium) + " mg")
+                    NutritionRow(label = "Phosphorus", value = String.format("%.3f", phosphorus) + " mg")
                 }
             }
         }
