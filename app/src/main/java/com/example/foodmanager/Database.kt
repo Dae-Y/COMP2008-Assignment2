@@ -24,6 +24,7 @@ data class Food(
     @ColumnInfo(name = "kcal") val kcal: Double,
     @ColumnInfo(name = "date") val date: String, // Use "yyyy-MM-dd" format for consistency
     @ColumnInfo(name = "food_image") val image: String? // Store the path of the image
+
 )
 
 // Define dailyKcal entity, this table only uses 1 row.

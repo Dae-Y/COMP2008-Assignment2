@@ -29,6 +29,7 @@ class NutritionViewModel : ViewModel() {
             try {
                 val requestBody = mapOf("query" to foodName)
                 val response = withContext(Dispatchers.IO) {
+
                     apiService.getNutritionData("aaee087b",
                         "aa58793d24f5662a188b4ba5d672e39e", requestBody)
                 }
@@ -43,5 +44,6 @@ class NutritionViewModel : ViewModel() {
         }
     }
 }
+
 
 
