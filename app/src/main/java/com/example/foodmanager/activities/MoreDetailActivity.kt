@@ -30,6 +30,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.tooling.preview.Preview
 import com.example.foodmanager.NutritionViewModel
 import com.example.foodmanager.R
 import java.net.URL
@@ -80,7 +81,6 @@ class MoreDetailActivity : ComponentActivity() {
     }
 }
 
-
 @Composable
 fun MoreDetailScreen(foodName: String, viewModel: NutritionViewModel) {
     val nutritionData by viewModel.nutritionData.collectAsState()
@@ -111,6 +111,13 @@ fun MoreDetailScreen(foodName: String, viewModel: NutritionViewModel) {
                 style = MaterialTheme.typography.titleLarge,
                 modifier = Modifier.padding(bottom = 8.dp)
             )
+
+
+            // about here you can put the food image
+
+
+            //
+
 
             Text(text = "Serving Size: ${data.serving_qty} ${data.serving_unit}")
             Text(text = "Weight: ${data.serving_weight_grams} grams")
