@@ -183,7 +183,7 @@ fun AddActivityContent(foodDao: FoodDao, viewModel: NutritionViewModel) {
             item { Spacer(modifier = Modifier.height(16.dp)) }
             item { OutlinedTextField(
                     value = foodName,
-                    onValueChange = { foodName = it.lowercase()
+                    onValueChange = { foodName = it
                                     isNameEmpty = false
                     },
                     label = { Text("Food Name") },
