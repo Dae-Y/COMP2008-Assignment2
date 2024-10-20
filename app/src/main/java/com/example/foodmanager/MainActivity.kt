@@ -236,20 +236,8 @@ fun CurvedTextWithElevation(text: String, onClick: () -> Unit) {
 
 @Composable
 fun FoodCard(food: Food, foodDao: FoodDao, context: Context) {
-    val userProfileID = foodDao.getUserProfile().deviceID.toString()
-    val foodID = food.id.toString()
 
-//    val foodRef = Firebase.database.getReference(userProfileID).child(foodID)
-//
-//    var image by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(false) }
-//
-//    foodRef.get().addOnSuccessListener { snapshot ->
-//        if (snapshot.exists()) {
-//            val foodData = snapshot.value as Map<String, Any>
-//            image = foodData["food_image"] as String
-//        }
-//    }
 
     Card(
         modifier = Modifier
@@ -259,6 +247,7 @@ fun FoodCard(food: Food, foodDao: FoodDao, context: Context) {
         onClick = {
             // Navigate to MoreDetailActivity with food details as extras
             val intent = Intent(context, MoreDetailActivity::class.java).apply {
+                putExtra("foodIMG", food.image)
                 putExtra("foodName", food.name)
                 putExtra("foodImageUrl", food.image) // Pass the image URL (or empty string if null)
                 putExtra("mealType", food.mealType) // Pass the meal type

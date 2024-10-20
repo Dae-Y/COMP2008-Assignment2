@@ -104,16 +104,8 @@ fun SummaryActivityContent(foods: List<Food>, profileID: Int) {
 @Composable
 fun SingleFoodCard(food: Food, profileID: Int) {
     val context = LocalContext.current
-//    val foodRef = Firebase.database.getReference(profileID.toString()).child(food.id.toString())
-//    var image by remember { mutableStateOf(R.drawable.defaultfoodimg.toString()) }
-    var isLoading by remember { mutableStateOf(false) }
 
-//    foodRef.get().addOnSuccessListener { snapshot ->
-//        if (snapshot.exists()) {
-//            val foodData = snapshot.value as Map<String, Any>
-//            image = foodData["food_image"] as String
-//        }
-//    }
+    var isLoading by remember { mutableStateOf(false) }
 
     Card(
         modifier = Modifier
@@ -123,6 +115,7 @@ fun SingleFoodCard(food: Food, profileID: Int) {
         onClick = {
             // Navigate to MoreDetailActivity with food details as extras
             val intent = Intent(context, MoreDetailActivity::class.java).apply {
+                putExtra("foodIMG", food.image)
                 putExtra("foodName", food.name)
                 putExtra("foodImageUrl", food.image) // Pass the image URL (or empty string if null)
                 putExtra("mealType", food.mealType) // Pass the meal type

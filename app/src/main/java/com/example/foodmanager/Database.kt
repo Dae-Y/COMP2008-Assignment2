@@ -9,6 +9,8 @@ import androidx.room.Entity
 import androidx.room.Insert
 import androidx.room.Update
 import androidx.room.Delete
+import androidx.room.ForeignKey
+import androidx.room.Index
 import androidx.room.PrimaryKey
 import androidx.room.Query
 import androidx.room.Room
@@ -27,6 +29,39 @@ data class Food(
 
 )
 
+// When Remote API calling fails, users should see this manually typed nutrition
+// Nutrition entity
+@Entity(
+    tableName = "nutrition",
+    foreignKeys = [
+        ForeignKey(
+            entity = Food::class,
+            parentColumns = ["id"],
+            childColumns = ["food_id"],
+            onDelete = ForeignKey.CASCADE // Delete nutrition when the food entry is deleted
+        )
+    ],
+    indices = [Index("food_id")] // Create index for faster lookups
+)
+data class Nutrition(
+    @PrimaryKey(autoGenerate = true) val id: Int = 0,
+    @ColumnInfo(name = "food_id") val foodId: Int, // Foreign key referencing Food
+    @ColumnInfo(name = "serving_qty") val servingQty: Int,
+    @ColumnInfo(name = "serving_unit") val servingUnit: String,
+    @ColumnInfo(name = "serving_weight") val servingWeight: Double,
+    @ColumnInfo(name = "calories") val calories: Double,
+    @ColumnInfo(name = "total_fat") val totalFat: Double,
+    @ColumnInfo(name = "sat_fat") val saturatedFat: Double,
+    @ColumnInfo(name = "cholesterol") val cholesterol: Double,
+    @ColumnInfo(name = "sodium") val sodium: Double,
+    @ColumnInfo(name = "carbohydrate") val carbohydrate: Double,
+    @ColumnInfo(name = "fiber") val fiber: Double,
+    @ColumnInfo(name = "sugars") val sugars: Double,
+    @ColumnInfo(name = "protein") val protein: Double,
+    @ColumnInfo(name = "potassium") val potassium: Double,
+    @ColumnInfo(name = "phosphorus") val phosphorus: Double
+)
+
 // Define dailyKcal entity, this table only uses 1 row.
 // So it only use update.
 @Entity(tableName = "userProfile")
@@ -40,8 +75,11 @@ data class UserProfile(
 interface FoodDao {
 
     // ======================== When API fails, open up nutrition manually ===================================== //
-    // @Insert
-    // fun insertNutrition(nutrition: Nutrition)
+     @Insert
+     fun insertNutrition(nutrition: Nutrition)
+
+    @Query("SELECT * FROM nutrition WHERE food_id = :id") // Get nutrition food by food ID
+    fun getNutByFoodId(id: Int): Nutrition?
 
     // ======================================= Query For dailyKcal Table ======================================= //
     @Update
@@ -78,6 +116,9 @@ interface FoodDao {
     @Query("DELETE FROM foods WHERE date = :date") // Delete foods by date
     fun deleteFoodsByDate(date: String)
 
+    @Query("DELETE FROM foods WHERE id = :id") // Delete foods by id
+    fun deleteFoodsId(id: Int)
+
     @Query("SELECT * FROM foods ORDER BY date DESC") // Get foods ordered by date
     fun getFoodsOrderedByDate(): List<Food>
 
@@ -94,14 +135,30 @@ interface FoodDao {
     fun deleteFood(food: Food)
 }
 
+// DAO for Nutrition
+@Dao
+interface NutritionDao {
+    @Insert
+    fun insertNutrition(nutrition: Nutrition)
+
+    @Query("SELECT * FROM nutrition WHERE food_id = :foodId")
+    fun getNutritionByFoodId(foodId: Int): Nutrition?
+
+    @Delete
+    fun deleteNutrition(nutrition: Nutrition)
+}
+
+
 // Database class must be an abstract class that extends RoomDatabase
 // For each DAO class that is associated with the database, the database class
 // must define an abstract method that has zero arguments and returns an
 // instance of the DAO class
-@Database(entities = [Food::class, UserProfile::class], version = 1)
+@Database(entities = [Food::class, UserProfile::class, Nutrition::class], version = 2)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun foodDao(): FoodDao
+    abstract fun nutritionDao(): NutritionDao
 }
+
 
 // Singleton pattern for accessing the database
 object DatabaseProvider {
@@ -113,7 +170,9 @@ object DatabaseProvider {
                 context.applicationContext,
                 AppDatabase::class.java,
                 "food-database"
-            ).allowMainThreadQueries() // Using main thread for now
+            )
+                .fallbackToDestructiveMigration() // Optional, use for migration handling
+                .allowMainThreadQueries() // Avoid in production code
                 .build()
 
             INSTANCE = instance
