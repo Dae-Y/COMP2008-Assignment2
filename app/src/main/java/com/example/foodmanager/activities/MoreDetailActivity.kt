@@ -35,6 +35,8 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.tooling.preview.Preview
 import coil.compose.AsyncImage
+import com.example.foodmanager.DatabaseProvider
+import com.example.foodmanager.FoodDao
 import com.example.foodmanager.NutritionViewModel
 import com.example.foodmanager.R
 
@@ -43,9 +45,11 @@ class MoreDetailActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        val foodID = intent.getStringExtra("foodID")
         val foodIMG = intent.getStringExtra("foodIMG")
         val foodName = intent.getStringExtra("foodName")
         val portionSize = intent.getIntExtra("portionSize", 1) // Default to 1 if not provided
+        val db = DatabaseProvider.getDatabase(this)
 
         setContent {
             FoodManagerTheme {
@@ -59,7 +63,7 @@ class MoreDetailActivity : ComponentActivity() {
                             .fillMaxWidth()
                             .weight(1f)
                     ) {
-                        MoreDetailScreen(foodIMG ?: "", foodName ?: "", portionSize, viewModel)
+                        MoreDetailScreen(db.foodDao(),foodID ?:"", foodIMG ?: "", foodName ?: "", portionSize, viewModel)
                     }
                     Box(
                         modifier = Modifier
@@ -87,11 +91,12 @@ class MoreDetailActivity : ComponentActivity() {
 }
 
 @Composable
-fun MoreDetailScreen(foodIMG: String, foodName: String, portionSize: Int, viewModel: NutritionViewModel) {
+fun MoreDetailScreen(foodDao: FoodDao, foodID: String, foodIMG: String, foodName: String, portionSize: Int, viewModel: NutritionViewModel) {
     val nutritionData by viewModel.nutritionData.collectAsState()
     val loading by viewModel.loading.collectAsState()
     val errorMessage by viewModel.errorMessage.collectAsState()
     var isLoading by remember { mutableStateOf(false) }
+
 
     Column(
         modifier = Modifier
@@ -113,7 +118,77 @@ fun MoreDetailScreen(foodIMG: String, foodName: String, portionSize: Int, viewMo
 
                 errorMessage?.let {
                     if (it.isNotEmpty()) {
-                        Text(text = it, color = Color.Red)
+                        val nutData = foodDao.getNutByFoodId(foodID.toInt())
+
+                        if (nutData != null) {
+                            // Display the food name and calculated values
+                            Text(
+                                text = "Food: $foodName",
+                                fontWeight = FontWeight.Bold,
+                                style = MaterialTheme.typography.titleLarge,
+                                modifier = Modifier.padding(bottom = 8.dp),
+                                textDecoration = TextDecoration.Underline
+                            )
+
+                            Box(modifier = Modifier.align(Alignment.CenterHorizontally),
+                                contentAlignment=Alignment.Center){
+                                AsyncImage(
+                                    model = foodIMG,
+                                    error = painterResource(R.drawable.defaultfoodimg),
+                                    contentScale = ContentScale.Fit,
+                                    contentDescription = "Contact Picture",
+                                    modifier = Modifier
+                                        .size(100.dp)
+                                        .clip(CircleShape),
+                                    onLoading = {isLoading=true},
+                                    onSuccess = {isLoading=false},
+                                    onError = { error ->
+                                        isLoading = false
+                                    }
+                                )
+                                if (isLoading) {
+                                    CircularProgressIndicator(
+                                        color = MaterialTheme.colorScheme.secondary,
+                                        trackColor = MaterialTheme.colorScheme.surfaceVariant
+                                    )
+                                }
+                            }
+
+
+                            Text(text = "Serving Size: ${nutData.servingQty} ${nutData.servingUnit}")
+                            Text(text = "Weight: ${nutData.servingWeight} grams")
+
+                            Spacer(modifier = Modifier.height(16.dp))
+
+                            // Nutrition facts section
+                            Card(modifier = Modifier.fillMaxWidth()) {
+                                Column(modifier = Modifier.padding(16.dp)) {
+                                    Text(
+                                        text = "Nutrition Facts",
+                                        fontWeight = FontWeight.Bold,
+                                        style = MaterialTheme.typography.titleMedium,
+                                        modifier = Modifier.padding(bottom = 8.dp)
+                                    )
+
+                                    NutritionRow(label = "Calories", value = String.format("%.3f", nutData.calories) + " kcal")
+                                    NutritionRow(label = "Total Fat", value = String.format("%.3f", nutData.totalFat) + " g")
+                                    NutritionRow(label = "Saturated Fat", value = String.format("%.3f", nutData.saturatedFat) + " g")
+                                    NutritionRow(label = "Cholesterol", value = String.format("%.3f", nutData.cholesterol) + " mg")
+                                    NutritionRow(label = "Sodium", value = String.format("%.3f", nutData.sodium) + " mg")
+                                    NutritionRow(label = "Carbohydrates", value = String.format("%.3f", nutData.carbohydrate) + " g")
+                                    NutritionRow(label = "Dietary Fiber", value = String.format("%.3f", nutData.fiber) + " g")
+                                    NutritionRow(label = "Sugars", value = String.format("%.3f", nutData.sugars) + " g")
+                                    NutritionRow(label = "Protein", value = String.format("%.3f", nutData.protein) + " g")
+                                    NutritionRow(label = "Potassium", value = String.format("%.3f", nutData.potassium) + " mg")
+                                    NutritionRow(label = "Phosphorus", value = String.format("%.3f", nutData.phosphorus) + " mg")
+                                }
+                            }
+                        }
+
+
+
+
+
                     }
                 }
                 nutritionData?.let { data ->

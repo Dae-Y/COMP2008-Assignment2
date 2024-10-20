@@ -12,13 +12,10 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.viewModels
 import androidx.annotation.RequiresApi
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
@@ -32,7 +29,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -49,7 +45,6 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableDoubleStateOf
 import androidx.compose.runtime.mutableIntStateOf
@@ -60,13 +55,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextDecoration
-import androidx.compose.ui.text.toLowerCase
 import androidx.compose.ui.unit.dp
 import com.example.foodmanager.DatabaseProvider
 import com.example.foodmanager.Food
@@ -87,7 +80,6 @@ import java.io.File
 import java.io.FileOutputStream
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
-import java.util.Locale
 
 class AddActivity : ComponentActivity() {
     private val viewModel: NutritionViewModel by viewModels()
@@ -192,7 +184,9 @@ fun AddActivityContent(foodDao: FoodDao, viewModel: NutritionViewModel) {
                     colors = myOutlinedTextFieldColors(),
                     trailingIcon = {  // Add a trailing icon
                         IconButton(onClick = {
+
                             viewModel.fetchNutritionData(foodName)
+
                             viewModel.nutritionData.value?.let { nutritionData ->
                                 foodKcal = nutritionData.nf_calories.toString()
                                 isAPIgetFood = true
@@ -206,7 +200,7 @@ fun AddActivityContent(foodDao: FoodDao, viewModel: NutritionViewModel) {
                             else
                             {
                                 Toast.makeText(context,
-                                    "API fail to find food ${foodName}!,\nManual input require later",
+                                    "API fail to find food ${foodName},\nManual input require later",
                                     Toast.LENGTH_LONG)
                                     .show()
                             }
@@ -224,7 +218,7 @@ fun AddActivityContent(foodDao: FoodDao, viewModel: NutritionViewModel) {
                                 tint = Color.Black
                             )
                         }
-                }
+                    }
                 )
                 if (isNameEmpty) {
                     Text(
@@ -238,12 +232,12 @@ fun AddActivityContent(foodDao: FoodDao, viewModel: NutritionViewModel) {
             item { OutlinedTextField(
                     value = portionSize,
                     onValueChange = { newValue ->
-                        if (newValue.all { it.isDigit() }) {
+                        if (newValue.all { it.isDigit() } && newValue.length <= 2 && newValue.toIntOrNull() in 1..99) {
                             portionSize = newValue
                             isPortionEmpty = false
                         } else {
-                            Toast.makeText(context, "Please input numbers only", Toast.LENGTH_SHORT)
-                                .show()
+                            portionSize = "1"
+                            Toast.makeText(context, "Please input numbers between 1 and 99", Toast.LENGTH_SHORT).show()
                         }
                     },
                     label = { Text("Portion Size (1,2 etc.)") },
@@ -388,7 +382,6 @@ fun AddActivityContent(foodDao: FoodDao, viewModel: NutritionViewModel) {
             setShowDialog = { showNutrientsDialog = it },
             foodDao = foodDao,
             context = context,
-            coroutineScope = coroutineScope,
             setIsLoading = {isLoading = it})
     }
 }
@@ -553,7 +546,6 @@ fun UpdateDailyKcalDialog(
     setShowDialog: (Boolean) -> Unit,
     foodDao: FoodDao,
     context: Context,
-    coroutineScope: CoroutineScope,
     setIsLoading: (Boolean) -> Unit
 ) {
     var servingQty by remember { mutableIntStateOf(0) }
@@ -576,7 +568,6 @@ fun UpdateDailyKcalDialog(
 
     var phosphorus by remember { mutableDoubleStateOf(0.0) }
 
-    var isLoading by remember { mutableStateOf(false) }
 
     if (showDialog) {
         AlertDialog(
@@ -605,9 +596,7 @@ fun UpdateDailyKcalDialog(
                         value = servingUnit,
                         onValueChange = { newValue -> servingUnit = newValue },
                         label = { Text("Serving Unit") },
-                        modifier = Modifier.fillMaxWidth(),
-                        textStyle = TextStyle(Color.Black),
-                        colors = myOutlinedTextFieldColors(),
+                        modifier = Modifier.fillMaxWidth()
                     )  }
                     item { NutTextField(
                         value = calories.toString(),
@@ -680,10 +669,9 @@ fun UpdateDailyKcalDialog(
             },
             confirmButton = {
                 TextButton(onClick = {
-                    /*TODO: handle nutrients add/update*/
                     foodDao.insertNutrition(Nutrition(
                         foodId = foodId,
-                        servingQty = servingQty.toInt(),
+                        servingQty = servingQty,
                         servingUnit = servingUnit,
                         servingWeight = servingWeight,
                         calories = calories,
@@ -707,7 +695,7 @@ fun UpdateDailyKcalDialog(
             },
             dismissButton = {
                 TextButton(onClick = {
-                    Toast.makeText(context, "Operation cancel", Toast.LENGTH_LONG).show()
+                    Toast.makeText(context, "Add food cancel", Toast.LENGTH_LONG).show()
                     setShowDialog(false)
 
                     foodDao.deleteFoodsId(id = foodId) // had to do this
@@ -746,7 +734,7 @@ fun NutTextField(
 
 fun validateInputDouble(value: TextFieldValue, context: Context): Boolean {
     val text = value.text // Extract the text from TextFieldValue
-    if (text.isEmpty() || text.toDoubleOrNull() != null) {
+    if (text.isEmpty() || text.toDoubleOrNull() != null || text == ".") {
         return true
     } else {
         Toast.makeText(context, "Please input a valid number", Toast.LENGTH_SHORT).show()
