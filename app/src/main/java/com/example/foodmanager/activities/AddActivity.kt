@@ -220,7 +220,8 @@ fun AddActivityContent(foodDao: FoodDao, viewModel: NutritionViewModel) {
                                 )) {
                             Icon(
                                 imageVector = Icons.Filled.Search,
-                                contentDescription = "Search"
+                                contentDescription = "Search",
+                                tint = Color.Black
                             )
                         }
                 }
