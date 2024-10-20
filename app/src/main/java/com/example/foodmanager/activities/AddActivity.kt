@@ -161,7 +161,6 @@ fun AddActivityContent(foodDao: FoodDao, viewModel: NutritionViewModel) {
                     onValueChange = { foodName = it
                                     isNameEmpty = false
                                     viewModel.fetchNutritionData(foodName)
-
                                     viewModel.nutritionData.value?.let { nutritionData ->
                                         foodKcal = nutritionData.nf_calories.toString()
                                     }
@@ -227,7 +226,7 @@ fun AddActivityContent(foodDao: FoodDao, viewModel: NutritionViewModel) {
                                 .show()
                         }
                     },
-                    label = { Text("Food Kcal") },
+                    label = { Text("Food kcal") },
                     keyboardOptions =
                     KeyboardOptions.Default.copy(keyboardType = KeyboardType.Number),
                     modifier = Modifier.fillMaxWidth(),
@@ -284,7 +283,7 @@ fun AddActivityContent(foodDao: FoodDao, viewModel: NutritionViewModel) {
                 }, modifier = Modifier
                     .fillMaxWidth()
                     .padding(8.dp)
-            ) { Text(text = "Add contact into database") } }
+            ) { Text(text = "Add food") } }
         }
     }
     if(isLoading){
